@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# AI Stack v1.0 - Pre-commit Git Hook
+# ==============================================================================
+set -euo pipefail
+IFS=$'\n\t'
+
+# Check if script runs inside git repo root
+if [ -f "./scripts/format.sh" ] && [ -f "./scripts/lint.sh" ]; then
+    echo "🪝 Running AI Stack Pre-Commit Hook..."
+
+    # 1. Check for committed secrets (filtering for env, configs, and source files)
+    FILES_TO_CHECK=$(git diff --cached --name-only | grep -E "\.(env|json|py|js|ts|go|yml|yaml|ini)$" | grep -v "example" || true)
+    if [ -n "$FILES_TO_CHECK" ]; then
+        if echo "$FILES_TO_CHECK" | xargs git diff --cached -- | grep -E "^\+" | grep -Ei "key|secret|token|password" | grep -vE "example|placeholder|<|>|your_|_KEY:-" | grep -E "['\"][a-zA-Z0-9_-]{10,}['\"]|=[a-zA-Z0-9_-]{10,}" >/dev/null 2>&1; then
+            echo "❌ ERROR: Potential API Key or Secret detected in staged code files."
+            echo "Please double-check your changes or remove secrets before committing."
+            exit 1
+        fi
+    fi
+
+    # 2. Run format check
+    echo "🧹 Validating file formatting..."
+    bash ./scripts/format.sh
+
+    # 3. Run lint structure check
+    echo "🛡️ Validating structure linting..."
+    bash ./scripts/lint.sh
+
+    echo "✅ Pre-commit validation passed."
+else
+    echo "⚠️ Git hooks warnings: AI Stack scripts (format.sh or lint.sh) not found in root workspace directory."
+fi
+
+exit 0
