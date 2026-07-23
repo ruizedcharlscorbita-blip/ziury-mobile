@@ -187,6 +187,16 @@ export async function getNotes(): Promise<Note[]> {
   }));
 }
 
+export async function deleteNote(id: string): Promise<void> {
+  if (Platform.OS === 'web' || !db) {
+    removeFromLocalStorage('note_' + id);
+    removeFromLocalStorage('tl_note_' + id);
+    return;
+  }
+  await db.runAsync('DELETE FROM notes WHERE id = ?', [id]);
+  await db.runAsync('DELETE FROM timeline_items WHERE id = ?', ['tl_note_' + id]);
+}
+
 // ── TASKS ─────────────────────────────────────────────────────────────────
 export async function saveTask(task: Task): Promise<void> {
   if (Platform.OS === 'web' || !db) {
@@ -225,6 +235,16 @@ export async function getTasks(): Promise<Task[]> {
     ...r,
     isCompleted: Boolean(r.isCompleted),
   }));
+}
+
+export async function deleteTask(id: string): Promise<void> {
+  if (Platform.OS === 'web' || !db) {
+    removeFromLocalStorage('task_' + id);
+    removeFromLocalStorage('tl_task_' + id);
+    return;
+  }
+  await db.runAsync('DELETE FROM tasks WHERE id = ?', [id]);
+  await db.runAsync('DELETE FROM timeline_items WHERE id = ?', ['tl_task_' + id]);
 }
 
 // ── EVENTS ────────────────────────────────────────────────────────────────

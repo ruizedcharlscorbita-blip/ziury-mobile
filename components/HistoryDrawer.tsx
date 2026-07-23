@@ -18,7 +18,7 @@ interface HistoryDrawerProps {
   activeConversationId: string | null;
   onSelectConversation: (conv: Conversation) => void;
   onNewChat: () => void;
-  onDeleteConversation: (id: string) => void;
+  onDeleteConversation: (convId: string) => void;
 }
 
 export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
@@ -30,95 +30,113 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
   onNewChat,
   onDeleteConversation,
 }) => {
+  const handleSelect = (conv: Conversation) => {
+    onSelectConversation(conv);
+    onClose();
+  };
+
+  const handleNew = () => {
+    onNewChat();
+    onClose();
+  };
+
   return (
-    <Modal visible={visible} animationType="fade" transparent>
-      <View style={styles.overlay}>
-        <SafeAreaView style={styles.drawerContent}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Memory & History</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close" size={22} color="#111827" />
+    <Modal visible={visible} transparent animationType="slide">
+      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose}>
+        <TouchableOpacity style={styles.drawerContent} activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+          <SafeAreaView style={styles.safeArea}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Memory & History</Text>
+              <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+                <Ionicons name="close" size={24} color="#111827" />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity style={styles.newChatBtn} onPress={handleNew}>
+              <Ionicons name="add" size={20} color="#ffffff" />
+              <Text style={styles.newChatText}>New Conversation</Text>
             </TouchableOpacity>
-          </View>
 
-          <TouchableOpacity
-            style={styles.newChatBtn}
-            onPress={() => {
-              onNewChat();
-              onClose();
-            }}
-          >
-            <Ionicons name="add" size={20} color="#ffffff" />
-            <Text style={styles.newChatText}>New Conversation</Text>
-          </TouchableOpacity>
-
-          <FlatList
-            data={conversations}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContent}
-            renderItem={({ item }) => {
-              const isActive = item.id === activeConversationId;
-              return (
-                <TouchableOpacity
-                  style={[styles.itemCard, isActive && styles.itemCardActive]}
-                  onPress={() => {
-                    onSelectConversation(item);
-                    onClose();
-                  }}
-                >
-                  <View style={styles.itemTextContainer}>
-                    <Text style={styles.itemTitle} numberOfLines={1}>
-                      {item.title || 'Conversation'}
-                    </Text>
-                    <Text style={styles.itemMeta}>
-                      {item.provider.toUpperCase()} • {new Date(item.updatedAt).toLocaleDateString()}
-                    </Text>
-                  </View>
-
+            <FlatList
+              data={conversations}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.listContent}
+              renderItem={({ item }) => {
+                const isActive = item.id === activeConversationId;
+                return (
                   <TouchableOpacity
-                    onPress={() => onDeleteConversation(item.id)}
-                    style={styles.deleteBtn}
+                    style={[styles.itemCard, isActive && styles.itemCardActive]}
+                    onPress={() => handleSelect(item)}
                   >
-                    <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                    <Ionicons
+                      name="chatbubble-ellipses-outline"
+                      size={18}
+                      color={isActive ? '#6366f1' : '#6b7280'}
+                    />
+                    <View style={styles.itemTextContainer}>
+                      <Text style={[styles.itemTitle, isActive && styles.itemTitleActive]} numberOfLines={1}>
+                        {item.title}
+                      </Text>
+                      <Text style={styles.itemDate}>
+                        {new Date(item.updatedAt).toLocaleDateString([], {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </Text>
+                    </View>
+
+                    <TouchableOpacity
+                      style={styles.deleteBtn}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        onDeleteConversation(item.id);
+                      }}
+                    >
+                      <Ionicons name="trash-outline" size={16} color="#ef4444" />
+                    </TouchableOpacity>
                   </TouchableOpacity>
-                </TouchableOpacity>
-              );
-            }}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Ionicons name="chatbubbles-outline" size={40} color="#9ca3af" />
-                <Text style={styles.emptyText}>No saved conversations yet</Text>
-              </View>
-            }
-          />
-        </SafeAreaView>
-        <TouchableOpacity style={styles.backdrop} onPress={onClose} />
-      </View>
+                );
+              }}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="chatbubbles-outline" size={40} color="#d1d5db" />
+                  <Text style={styles.emptyText}>No saved conversations yet</Text>
+                </View>
+              }
+            />
+          </SafeAreaView>
+        </TouchableOpacity>
+      </TouchableOpacity>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
+  backdrop: {
     flex: 1,
-    flexDirection: 'row',
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    flexDirection: 'row',
   },
   drawerContent: {
-    width: '80%',
+    width: '85%',
     backgroundColor: '#ffffff',
     height: '100%',
-    paddingHorizontal: 16,
+    elevation: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 4, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
   },
-  backdrop: {
-    width: '20%',
-    height: '100%',
+  safeArea: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f3f4f6',
   },
@@ -135,45 +153,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#6366f1',
-    paddingVertical: 12,
+    marginHorizontal: 16,
+    marginTop: 14,
+    marginBottom: 8,
+    height: 44,
     borderRadius: 10,
-    marginVertical: 14,
   },
   newChatText: {
     color: '#ffffff',
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: 14,
     marginLeft: 6,
   },
   listContent: {
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   itemCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     padding: 12,
     borderRadius: 10,
-    backgroundColor: '#f9fafb',
-    marginBottom: 8,
+    marginBottom: 6,
+    backgroundColor: '#fafafa',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
   itemCardActive: {
     backgroundColor: '#eef2ff',
-    borderWidth: 1,
-    borderColor: '#a5b4fc',
+    borderColor: '#6366f1',
   },
   itemTextContainer: {
     flex: 1,
-    marginRight: 8,
+    marginLeft: 10,
   },
   itemTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#111827',
+    color: '#374151',
   },
-  itemMeta: {
-    fontSize: 11,
-    color: '#6b7280',
+  itemTitleActive: {
+    color: '#6366f1',
+    fontWeight: '700',
+  },
+  itemDate: {
+    fontSize: 10,
+    color: '#9ca3af',
     marginTop: 2,
   },
   deleteBtn: {
@@ -185,8 +210,8 @@ const styles = StyleSheet.create({
     marginTop: 60,
   },
   emptyText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#6b7280',
+    fontSize: 12,
+    color: '#9ca3af',
+    marginTop: 8,
   },
 });

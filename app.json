@@ -38,7 +38,8 @@
           "color": "#6366f1"
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-web-browser"
     ],
     "experiments": {
       "tsconfigPaths": true

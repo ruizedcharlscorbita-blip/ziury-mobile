@@ -8,17 +8,30 @@ export async function generateAIResponse(
 ): Promise<string> {
   // 1. OmniRouter (Local Network Proxy / Custom OmniRouter API Key)
   if (provider === 'omnirouter') {
-    const omniUrl = (await getAPIKey('omniRouterUrl')) || process.env.LLM_PROXY_BASE_URL || 'http://192.168.1.100:4000';
-    const omniKey = (await getAPIKey('omniRouterKey')) || process.env.LLM_PROXY_API_KEY || 'sk-omnirouter';
+    const omniUrl = (await getAPIKey('omniRouterUrl')) || process.env.LLM_PROXY_BASE_URL || 'http://localhost:20128/v1';
+    const omniKey = (await getAPIKey('omniRouterKey')) || process.env.LLM_PROXY_API_KEY || 'sk-54ed274bf8ec01d3-007f28-3ddd2a56';
     try {
-      const response = await fetch(`${omniUrl}/v1/chat/completions`, {
+      const cleanUrl = omniUrl.replace(/\/+$/, '');
+      const endpoint = cleanUrl.endsWith('/v1')
+        ? `${cleanUrl}/chat/completions`
+        : `${cleanUrl}/v1/chat/completions`;
+
+      // Determine model name for OmniRouter (requires provider/model prefix or valid combo entry)
+      let omniModel = model || 'openai/omnirouter-auto';
+      if (omniModel === 'omnirouter-auto') {
+        omniModel = 'openai/omnirouter-auto';
+      } else if (!omniModel.includes('/')) {
+        omniModel = `openai/${omniModel}`;
+      }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${omniKey}`,
         },
         body: JSON.stringify({
-          model: model || 'omnirouter-auto',
+          model: omniModel,
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });

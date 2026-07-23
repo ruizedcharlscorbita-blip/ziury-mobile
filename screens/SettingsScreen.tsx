@@ -41,6 +41,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     if (keys.openrouter !== undefined) await saveAPIKey('openrouter', keys.openrouter);
     if (keys.ollamaHost !== undefined) await saveAPIKey('ollamaHost', keys.ollamaHost);
 
+    if (onRefreshData) {
+      onRefreshData();
+    }
+    
+    try {
+      const { NativeModules } = require('react-native');
+      if (NativeModules.DevSettings && NativeModules.DevSettings.reload) {
+        NativeModules.DevSettings.reload();
+      }
+    } catch(e) {}
+
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -62,17 +73,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           <Text style={styles.label}>OmniRouter Base URL (Local LAN / Server)</Text>
           <TextInput
             style={styles.input}
-            placeholder="http://192.168.1.100:4000"
+            placeholder="http://localhost:20128/v1"
             value={keys.omniRouterUrl || ''}
             onChangeText={(text) => setKeys({ ...keys, omniRouterUrl: text })}
           />
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>OmniRouter API Key (Optional)</Text>
+          <Text style={styles.label}>OmniRouter API Key</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter OmniRouter Key"
+            placeholder="sk-54ed274bf8ec01d3-007f28-3ddd2a56"
             secureTextEntry
             value={keys.omniRouterKey || ''}
             onChangeText={(text) => setKeys({ ...keys, omniRouterKey: text })}
@@ -144,6 +155,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             secureTextEntry
             value={keys.groq || ''}
             onChangeText={(text) => setKeys({ ...keys, groq: text })}
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>OpenRouter API Key</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter OpenRouter API Key"
+            secureTextEntry
+            value={keys.openrouter || ''}
+            onChangeText={(text) => setKeys({ ...keys, openrouter: text })}
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Local Ollama Host URL</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="http://localhost:11434"
+            value={keys.ollamaHost || ''}
+            onChangeText={(text) => setKeys({ ...keys, ollamaHost: text })}
           />
         </View>
       </View>

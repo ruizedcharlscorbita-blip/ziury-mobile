@@ -2,7 +2,7 @@ import { AIModelOption } from '../types';
 
 export const AVAILABLE_MODELS: AIModelOption[] = [
   {
-    id: 'omnirouter-auto',
+    id: 'openai/omnirouter-auto',
     name: 'OmniRouter (Auto LAN/API)',
     provider: 'omnirouter',
     description: 'Dynamic local network proxy or OmniRouter API key endpoint',
@@ -58,4 +58,4 @@ export const AVAILABLE_MODELS: AIModelOption[] = [
 ];
 
 export const DEFAULT_PROVIDER = 'omnirouter';
-export const DEFAULT_MODEL = 'omnirouter-auto';
+export const DEFAULT_MODEL = 'openai/omnirouter-auto';

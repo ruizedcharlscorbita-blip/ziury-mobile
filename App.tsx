@@ -42,6 +42,7 @@ import {
   saveNote,
   getTasks,
   saveTask,
+  deleteTask,
   getEvents,
   getTimelineItems,
   getBudgetItems,
@@ -144,6 +145,16 @@ export default function App() {
       priority: 'medium',
       createdAt: now,
     });
+    await refreshAllData();
+  };
+
+  const handleSaveTask = async (task: Task) => {
+    await saveTask(task);
+    await refreshAllData();
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    await deleteTask(taskId);
     await refreshAllData();
   };
 
@@ -258,7 +269,8 @@ export default function App() {
           <TasksScreen
             tasks={tasks}
             onRefresh={refreshAllData}
-            onNewTask={handleCreateTask}
+            onSaveTask={handleSaveTask}
+            onDeleteTask={handleDeleteTask}
           />
         );
       case 'settings':
