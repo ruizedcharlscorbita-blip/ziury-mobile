@@ -26,7 +26,6 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router",
       [
         "expo-secure-store",
         {
@@ -38,11 +37,11 @@
         {
           "color": "#6366f1"
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "experiments": {
-      "tsconfigPaths": true,
-      "typedRoutes": true
+      "tsconfigPaths": true
     }
   }
 }
