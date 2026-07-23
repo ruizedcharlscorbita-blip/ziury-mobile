@@ -66,4 +66,5 @@ code2prompt-output.txt
 
 # Local specific MCP settings or overrides
 .mcp/local-config.json
+.mcp/litellm.config.yaml
 *.local.json

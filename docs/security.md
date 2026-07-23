@@ -1,4 +1,4 @@
-# Security Reference Guide (Layer 10)
+﻿# Security Reference Guide (Layer 10)
 
 This document defines security rules for secret management, API storage, and preventing credentials leaks.
 
@@ -8,7 +8,7 @@ This document defines security rules for secret management, API storage, and pre
 
 - **Ignore Active Credentials**: Never commit `.env` or other active config files to Git. Staged credentials must be caught by pre-commit hooks.
 - **Provide Templates**: Always commit `.env.example` templates containing dummy placeholders for configuration.
-- **Prevent Key Files Leak**: Ensure private keys (`.pem`, `.key`), certificates, and credentials folders are declared in the project's root `[.gitignore](file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/.gitignore)`.
+- **Prevent Key Files Leak**: Ensure private keys (`.pem`, `.key`), certificates, and credentials folders are declared in the project's root `[.gitignore](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/.gitignore)`.
 
 ---
 

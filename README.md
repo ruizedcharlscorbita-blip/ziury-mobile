@@ -1,4 +1,4 @@
-# AI Stack v1.0
+﻿# AI Stack v1.0
 
 A reusable, local-first, AI-assisted software engineering foundation designed to be cloned directly into any project repository. It standardizes AI instructions, context optimization, templates, Git hooks, development environments, and search patterns.
 
@@ -25,9 +25,9 @@ To adopt the AI Stack in your repository:
    cp .env.example .env
    ```
 4. **Customize Instructions**: Update the following root files to describe your project's code style, goals, and architecture:
-   - `[PROJECT.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/PROJECT.md)`: Describe your project goal, architecture, and technology.
-   - `[CLAUDE.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/CLAUDE.md)`: Set commands and preferences for Claude Code or other CLI agents.
-   - `[STYLEGUIDE.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/STYLEGUIDE.md)`: Define your code formatting, naming, and commit style.
+   - `[PROJECT.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/PROJECT.md)`: Describe your project goal, architecture, and technology.
+   - `[CLAUDE.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/CLAUDE.md)`: Set commands and preferences for Claude Code or other CLI agents.
+   - `[STYLEGUIDE.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/STYLEGUIDE.md)`: Define your code formatting, naming, and commit style.
 
 ---
 
@@ -64,4 +64,4 @@ ai-stack/
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the `[LICENSE](file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/LICENSE)` file for details.
+This project is licensed under the MIT License - see the `[LICENSE](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/LICENSE)` file for details.

@@ -1,4 +1,4 @@
-# Code Reviewer Agent
+﻿# Code Reviewer Agent
 
 ## Responsibilities
 - Perform code review on incoming Pull Requests (PRs).
@@ -8,7 +8,7 @@
 
 ## Inputs
 - Pull Request diff file.
-- `[STYLEGUIDE.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/STYLEGUIDE.md)` and linting rules.
+- `[STYLEGUIDE.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/STYLEGUIDE.md)` and linting rules.
 - Description of changes and ticket goals.
 
 ## Outputs

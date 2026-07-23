@@ -1,11 +1,11 @@
-{
+﻿{
   "mcpServers": {
     "filesystem": {
       "command": "npx",
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "c:/Users/Administrator/Desktop/GEMINI/projects/ai stack"
+        "c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK V1"
       ]
     },
     "git": {

@@ -30,7 +30,7 @@ for file in knowledge-base/research/[0-9][0-9][0-9]-*.md; do
         # Remove leading zeros to treat as decimal number in bash
         NUM_VAL=$((10#$NUM))
         if [ "$NUM_VAL" -gt "$MAX_NUM" ]; then
-            MAX_NUM=$"$NUM_VAL"
+            MAX_NUM="$NUM_VAL"
         fi
     fi
 done

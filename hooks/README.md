@@ -1,9 +1,9 @@
-# Git Hooks Configuration
+﻿# Git Hooks Configuration
 
 This directory contains Git hooks templates used to validate codebase layout, prevent credential leakages, and enforce formatting guidelines before committing.
 
 ## Contents
-- `[pre-commit](file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/hooks/pre-commit)`: Shell script executing formatting and structure checks before commits are finalized.
+- `[pre-commit](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/hooks/pre-commit)`: Shell script executing formatting and structure checks before commits are finalized.
 
 ## How to Install
 Git hooks are automatically copied and configured when running the bootstrap script:

@@ -1,4 +1,4 @@
-# Pull Request: [Title of Changes]
+﻿# Pull Request: [Title of Changes]
 
 ## 📝 Summary
 [Provide a summary of the changes introduced in this PR and why they are necessary.]
@@ -14,7 +14,7 @@
 ---
 
 ## 🏛️ Related Architectural Decisions
-- Resolves / Refers to `[ADR-XXX](file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/knowledge-base/ADR/XXX-title.md)`
+- Resolves / Refers to `[ADR-XXX](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/knowledge-base/ADR/XXX-title.md)`
 
 ---
 

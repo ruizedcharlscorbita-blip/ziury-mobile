@@ -1,0 +1,91 @@
+# ==============================================================================
+# litellm.config.example.yaml — LiteLLM Proxy Configuration Template
+# ==============================================================================
+# HOW TO USE:
+#   1. Copy this file: cp .mcp/litellm.config.example.yaml .mcp/litellm.config.yaml
+#   2. Fill your API keys in .env (Tier 1 keys). The proxy reads them via
+#      os.environ/KEY_NAME — no real keys go into this YAML file.
+#   3. Start the proxy: litellm --config .mcp/litellm.config.yaml --port 4000
+#   4. Set in .env:  LLM_PROXY_BASE_URL=http://localhost:4000
+#                    LLM_PROXY_API_KEY=<your-chosen-master-key>
+#   See docs/llm-setup.md for the full walkthrough.
+# NOTE: litellm.config.yaml is gitignored. This example file is safe to commit.
+# ==============================================================================
+
+model_list:
+
+  # ── Anthropic (Claude) ──────────────────────────────────────────────────────
+  - model_name: claude-sonnet-4-5
+    litellm_params:
+      model: anthropic/claude-sonnet-4-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  - model_name: claude-opus-4
+    litellm_params:
+      model: anthropic/claude-opus-4
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  - model_name: claude-haiku-3-5
+    litellm_params:
+      model: anthropic/claude-haiku-3-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  # ── OpenAI ──────────────────────────────────────────────────────────────────
+  - model_name: gpt-4o
+    litellm_params:
+      model: openai/gpt-4o
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: gpt-4.1
+    litellm_params:
+      model: openai/gpt-4.1
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: gpt-4o-mini
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+
+  # ── Google Gemini ────────────────────────────────────────────────────────────
+  - model_name: gemini-2.5-pro
+    litellm_params:
+      model: gemini/gemini-2.5-pro
+      api_key: os.environ/GEMINI_API_KEY
+
+  - model_name: gemini-2.0-flash
+    litellm_params:
+      model: gemini/gemini-2.0-flash
+      api_key: os.environ/GEMINI_API_KEY
+
+  # ── Mistral ──────────────────────────────────────────────────────────────────
+  - model_name: mistral-large
+    litellm_params:
+      model: mistral/mistral-large-latest
+      api_key: os.environ/MISTRAL_API_KEY
+
+  # ── Groq (fast inference) ────────────────────────────────────────────────────
+  - model_name: llama-3-70b-groq
+    litellm_params:
+      model: groq/llama-3-70b-8192
+      api_key: os.environ/GROQ_API_KEY
+
+  # ── Ollama (local, no key required) ─────────────────────────────────────────
+  - model_name: ollama/llama3
+    litellm_params:
+      model: ollama/llama3
+      api_base: os.environ/OLLAMA_HOST
+
+  - model_name: ollama/mistral
+    litellm_params:
+      model: ollama/mistral
+      api_base: os.environ/OLLAMA_HOST
+
+# ── General Proxy Settings ────────────────────────────────────────────────────
+general_settings:
+  master_key: os.environ/LLM_PROXY_API_KEY   # Set LLM_PROXY_API_KEY in .env
+  store_model_in_db: false                    # Keep it stateless / zero-dependency
+
+# ── LiteLLM Behaviour ─────────────────────────────────────────────────────────
+litellm_settings:
+  drop_params: true        # Ignore unsupported params instead of erroring
+  set_verbose: false       # Set true only when debugging

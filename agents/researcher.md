@@ -1,4 +1,4 @@
-# Technical Researcher Agent
+﻿# Technical Researcher Agent
 
 ## Responsibilities
 - Investigate technical tooling, libraries, protocols, and database engines.
@@ -11,7 +11,7 @@
 - Core criteria parameters (speed, licensing, installation size).
 
 ## Outputs
-- Technical Research logs (`[templates/research.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/templates/research.md)` format).
+- Technical Research logs (`[templates/research.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/templates/research.md)` format).
 - Clean code examples for the proof-of-concepts.
 - Comparison matrix tables.
 

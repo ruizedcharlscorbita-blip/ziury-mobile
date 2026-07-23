@@ -1,4 +1,4 @@
-# Automation Scripts (Layer 6)
+﻿# Automation Scripts (Layer 6)
 
 This directory contains lightweight shell scripts designed to bootstrap environments, format text/code, run linting checks, organize documentation, and manage research/index assets.
 
@@ -6,12 +6,12 @@ This directory contains lightweight shell scripts designed to bootstrap environm
 
 ## 🛠️ Available Scripts
 
-- **`[bootstrap.sh](file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/scripts/bootstrap.sh)`**: Sets up the local environment, checks tool dependencies (`git`, `ripgrep`, etc.), and installs git hooks.
-- **`[format.sh](file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/scripts/format.sh)`**: Checks and fixes basic markdown and config formatting rules.
-- **`[lint.sh](file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/scripts/lint.sh)`**: Enforces folder rules, validating that all folders have a `README.md` and no files violate naming standards.
-- **`[docs.sh](file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/scripts/docs.sh)`**: Generates document templates (ADRs, design docs) interactively or on-demand.
-- **`[research.sh](file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/scripts/research.sh)`**: Initializer to set up a new research log with standard headers.
-- **`[knowledge-base-index.sh](file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/scripts/knowledge-base-index.sh)`**: Scans `ADR/` and `research/` directories to update `[INDEX.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/knowledge-base/INDEX.md)`.
+- **`[bootstrap.sh](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/scripts/bootstrap.sh)`**: Sets up the local environment, checks tool dependencies (`git`, `ripgrep`, etc.), and installs git hooks.
+- **`[format.sh](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/scripts/format.sh)`**: Checks and fixes basic markdown and config formatting rules.
+- **`[lint.sh](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/scripts/lint.sh)`**: Enforces folder rules, validating that all folders have a `README.md` and no files violate naming standards.
+- **`[docs.sh](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/scripts/docs.sh)`**: Generates document templates (ADRs, design docs) interactively or on-demand.
+- **`[research.sh](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/scripts/research.sh)`**: Initializer to set up a new research log with standard headers.
+- **`[knowledge-base-index.sh](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/scripts/knowledge-base-index.sh)`**: Scans `ADR/` and `research/` directories to update `[INDEX.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/knowledge-base/INDEX.md)`.
 
 ---
 

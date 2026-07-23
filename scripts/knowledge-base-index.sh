@@ -9,6 +9,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
+# Compute a portable file:// URL base from REPO_ROOT.
+# Git Bash returns Unix-style paths like /c/Users/...
+# We convert to Windows-style file URLs: file:///c:/Users/...
+_REPO_STRIPPED="${REPO_ROOT#/}"
+_DRIVE="${_REPO_STRIPPED:0:1}"
+_REST="${_REPO_STRIPPED:1}"
+_WIN_PATH="${_DRIVE}:${_REST}"
+REPO_URL_BASE="file:///$(printf '%s' "$_WIN_PATH" | sed 's| |%20|g')"
+
 INDEX_FILE="knowledge-base/INDEX.md"
 TEMP_INDEX="knowledge-base/INDEX.md.tmp"
 
@@ -64,8 +73,8 @@ for file in $(find knowledge-base/ADR -type f -name "[0-9][0-9][0-9]-*.md" | sor
         DESC="${DESC:0:97}..."
     fi
 
-    # Absolute-style relative file URL for markdown link compatibility
-    URL="file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/knowledge-base/ADR/${BASE}"
+    # Dynamic file URL derived from the actual REPO_ROOT at runtime
+    URL="${REPO_URL_BASE}/knowledge-base/ADR/${BASE}"
 
     echo "| ${ID} | [${TITLE}](${URL}) | ${DATE} | ${STATUS_VAL} | ${DESC} |" >> "$TEMP_INDEX"
 done
@@ -101,7 +110,7 @@ for file in $(find knowledge-base/research -type f -name "[0-9][0-9][0-9]-*.md" 
         FOCUS_VAL=$(grep -i "Focus:" "$file" | head -n 1 | sed -E 's/.*Focus:[[:space:]]*//' | tr -d '\r' || echo "General investigation.")
     fi
 
-    URL="file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/knowledge-base/research/${BASE}"
+    URL="${REPO_URL_BASE}/knowledge-base/research/${BASE}"
 
     echo "| ${ID} | [${TITLE}](${URL}) | ${DATE} | ${FOCUS_VAL} |" >> "$TEMP_INDEX"
 done
@@ -125,7 +134,7 @@ for file in $(find knowledge-base/patterns -type f -name "[0-9][0-9][0-9]-*.md" 
     TITLE=$(grep -E "^# " "$file" | head -n 1 | sed 's/^# //' || echo "Untitled")
     TITLE=$(echo "$TITLE" | sed -E 's/^PTN-[0-9]{3}: //')
 
-    URL="file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/knowledge-base/patterns/${BASE}"
+    URL="${REPO_URL_BASE}/knowledge-base/patterns/${BASE}"
     echo "- [${ID}: ${TITLE}](${URL})" >> "$TEMP_INDEX"
 done
 
@@ -148,7 +157,7 @@ for file in $(find knowledge-base/snippets -type f -name "[0-9][0-9][0-9]-*.*" |
     # Extract title from first line comments matching # SNP-XXX:
     TITLE=$(grep -E "^# SNP-[0-9]{3}:" "$file" | head -n 1 | sed -E 's/^# SNP-[0-9]{3}:[[:space:]]*//' | tr -d '\r' || echo "Code Snippet")
 
-    URL="file:///c:/Users/Administrator/Desktop/GEMINI/projects/ai%20stack/knowledge-base/snippets/${BASE}"
+    URL="${REPO_URL_BASE}/knowledge-base/snippets/${BASE}"
     echo "- [${ID}: ${TITLE}](${URL})" >> "$TEMP_INDEX"
 done
 
