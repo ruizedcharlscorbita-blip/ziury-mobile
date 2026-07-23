@@ -1,4 +1,4 @@
-﻿# AGENTS.md — Shared Assistant Instructions
+# AGENTS.md — Shared Assistant Instructions
 
 This document contains shared instructions and persona guidelines for AI agents, developers, and code copilots working within this repository. All AI agents interacting with this workspace must adhere to these directives.
 
@@ -32,6 +32,9 @@ We follow a **Capability-First, One-Tool-Per-Capability, Markdown-First, Local-F
 - Use the provided automation scripts in `./scripts/` (such as `lint.sh` and `format.sh`) instead of implementing ad-hoc validation.
 - Do not run `pip install`, `npm install`, or other packaging commands automatically. The codebase is designed to be zero-dependency by default.
 
-### 4. Git and Commit Conventions
+### 4. Framework Directives (Expo 57)
+- **Expo v57 Requirement**: Ziury Mobile uses Expo v57. Always consult exact versioned docs at `https://docs.expo.dev/versions/v57.0.0/` before writing or modifying mobile code.
+
+### 5. Git and Commit Conventions
 - Check and follow `[STYLEGUIDE.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/STYLEGUIDE.md)` for naming conventions and commit styles.
 - Commit messages must follow semantic commit formatting (e.g., `feat:`, `docs:`, `fix:`, `chore:`).
