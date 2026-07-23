@@ -2,10 +2,15 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { APIKeys } from '../types';
 
-const SECURE_STORE_KEYS = {
-  google: 'ziury_api_key_google',
-  anthropic: 'ziury_api_key_anthropic',
-  openai: 'ziury_api_key_openai',
+const SECURE_STORE_KEYS: Record<keyof APIKeys, string> = {
+  google: 'ziury_key_google',
+  anthropic: 'ziury_key_anthropic',
+  openai: 'ziury_key_openai',
+  groq: 'ziury_key_groq',
+  openrouter: 'ziury_key_openrouter',
+  cerebras: 'ziury_key_cerebras',
+  mistral: 'ziury_key_mistral',
+  ollamaHost: 'ziury_key_ollama_host',
 };
 
 export async function saveAPIKey(provider: keyof APIKeys, key: string): Promise<void> {
@@ -34,20 +39,20 @@ export async function getAllAPIKeys(): Promise<APIKeys> {
   const google = await getAPIKey('google');
   const anthropic = await getAPIKey('anthropic');
   const openai = await getAPIKey('openai');
+  const groq = await getAPIKey('groq');
+  const openrouter = await getAPIKey('openrouter');
+  const cerebras = await getAPIKey('cerebras');
+  const mistral = await getAPIKey('mistral');
+  const ollamaHost = await getAPIKey('ollamaHost');
+
   return {
     google: google || undefined,
     anthropic: anthropic || undefined,
     openai: openai || undefined,
+    groq: groq || undefined,
+    openrouter: openrouter || undefined,
+    cerebras: cerebras || undefined,
+    mistral: mistral || undefined,
+    ollamaHost: ollamaHost || 'http://localhost:11434',
   };
-}
-
-export async function deleteAPIKey(provider: keyof APIKeys): Promise<void> {
-  const storeKey = SECURE_STORE_KEYS[provider];
-  if (Platform.OS === 'web') {
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem(storeKey);
-    }
-  } else {
-    await SecureStore.deleteItemAsync(storeKey);
-  }
 }

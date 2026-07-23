@@ -2,22 +2,39 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   SafeAreaView,
   View,
-  Text,
   FlatList,
   StyleSheet,
   StatusBar,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { AIProvider, Conversation, Message } from './types';
+import {
+  AIProvider,
+  Conversation,
+  Message,
+  Note,
+  Task,
+  CalendarEvent,
+  TimelineItem,
+  BudgetItem,
+} from './types';
 import { DEFAULT_MODEL, DEFAULT_PROVIDER, AVAILABLE_MODELS } from './constants/models';
 import { Header } from './components/Header';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatInput } from './components/ChatInput';
-import { SettingsModal } from './components/SettingsModal';
+import { NavigationBar, ScreenTab } from './components/NavigationBar';
+import { QuickCaptureFAB, CaptureType } from './components/QuickCaptureFAB';
+import { QuickCaptureModal } from './components/QuickCaptureModal';
 import { HistoryDrawer } from './components/HistoryDrawer';
+
+import { DashboardScreen } from './screens/DashboardScreen';
+import { TimelineScreen } from './screens/TimelineScreen';
+import { NotesScreen } from './screens/NotesScreen';
+import { TasksScreen } from './screens/TasksScreen';
+import { CalendarScreen } from './screens/CalendarScreen';
+import { BudgetScreen } from './screens/BudgetScreen';
+import { SettingsScreen } from './screens/SettingsScreen';
+
 import {
   initDatabase,
   getConversations,
@@ -25,18 +42,34 @@ import {
   getMessagesForConversation,
   saveMessage,
   deleteConversation,
+  getNotes,
+  getTasks,
+  getEvents,
+  getTimelineItems,
+  getBudgetItems,
 } from './services/database';
 import { generateAIResponse } from './services/ai';
 
 export default function App() {
+  const [currentTab, setCurrentTab] = useState<ScreenTab>('dashboard');
   const [provider, setProvider] = useState<AIProvider>(DEFAULT_PROVIDER);
   const [model, setModel] = useState<string>(DEFAULT_MODEL);
+
+  // Data states
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [timeline, setTimeline] = useState<TimelineItem[]>([]);
+  const [budget, setBudget] = useState<BudgetItem[]>([]);
+
+  // UI modal states
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
+  const [captureType, setCaptureType] = useState<CaptureType | null>(null);
+  const [isCaptureModalOpen, setIsCaptureModalOpen] = useState<boolean>(false);
 
   const flatListRef = useRef<FlatList>(null);
 
@@ -46,12 +79,23 @@ export default function App() {
 
   const bootstrapApp = async () => {
     await initDatabase();
-    await loadConversationsList();
+    await refreshAllData();
   };
 
-  const loadConversationsList = async () => {
-    const list = await getConversations();
-    setConversations(list);
+  const refreshAllData = async () => {
+    const convs = await getConversations();
+    const n = await getNotes();
+    const t = await getTasks();
+    const e = await getEvents();
+    const tl = await getTimelineItems();
+    const b = await getBudgetItems();
+
+    setConversations(convs);
+    setNotes(n);
+    setTasks(t);
+    setEvents(e);
+    setTimeline(tl);
+    setBudget(b);
   };
 
   const handleSelectModel = (newProvider: AIProvider, newModelId: string) => {
@@ -62,6 +106,7 @@ export default function App() {
   const handleNewChat = () => {
     setCurrentConversation(null);
     setMessages([]);
+    setCurrentTab('chat');
   };
 
   const handleSelectConversation = async (conv: Conversation) => {
@@ -70,6 +115,7 @@ export default function App() {
     setModel(conv.model);
     const msgs = await getMessagesForConversation(conv.id);
     setMessages(msgs);
+    setCurrentTab('chat');
   };
 
   const handleDeleteConversation = async (convId: string) => {
@@ -77,10 +123,19 @@ export default function App() {
     if (currentConversation?.id === convId) {
       handleNewChat();
     }
-    await loadConversationsList();
+    await refreshAllData();
   };
 
-  const handleSend = async (userContent: string) => {
+  const handleQuickCapture = (type: CaptureType) => {
+    if (type === 'chat') {
+      handleNewChat();
+    } else {
+      setCaptureType(type);
+      setIsCaptureModalOpen(true);
+    }
+  };
+
+  const handleSendChat = async (userContent: string) => {
     const now = Date.now();
     let conv = currentConversation;
 
@@ -113,7 +168,7 @@ export default function App() {
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     await saveMessage(userMessage);
-    await loadConversationsList();
+    await refreshAllData();
 
     setIsLoading(true);
 
@@ -148,11 +203,64 @@ export default function App() {
   const activeModelOption = AVAILABLE_MODELS.find((m) => m.id === model);
   const activeModelName = activeModelOption ? activeModelOption.name : model;
 
-  const suggestions = [
-    'Write a React Native UI component for user profiles',
-    'Explain how SQLite indexing works on mobile devices',
-    'Help me debug an async state management issue',
-  ];
+  const renderActiveScreen = () => {
+    switch (currentTab) {
+      case 'dashboard':
+        return (
+          <DashboardScreen
+            tasks={tasks}
+            timeline={timeline}
+            budget={budget}
+            onNavigateTab={setCurrentTab}
+            onQuickCapture={handleQuickCapture}
+          />
+        );
+      case 'timeline':
+        return <TimelineScreen items={timeline} />;
+      case 'chat':
+        return (
+          <KeyboardAvoidingView
+            style={styles.flex}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => <ChatMessage message={item} />}
+              contentContainerStyle={styles.messageList}
+              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+            />
+            <ChatInput onSend={handleSendChat} isLoading={isLoading} />
+          </KeyboardAvoidingView>
+        );
+      case 'notes':
+        return (
+          <NotesScreen
+            notes={notes}
+            onNewNote={() => handleQuickCapture('note')}
+          />
+        );
+      case 'tasks':
+        return (
+          <TasksScreen
+            tasks={tasks}
+            onRefresh={refreshAllData}
+            onNewTask={() => handleQuickCapture('task')}
+          />
+        );
+      case 'settings':
+        return (
+          <SettingsScreen
+            selectedProvider={provider}
+            selectedModel={model}
+            onSelectModel={handleSelectModel}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -160,59 +268,22 @@ export default function App() {
 
       <Header
         activeModelName={activeModelName}
-        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenSettings={() => setCurrentTab('settings')}
         onOpenHistory={() => setIsHistoryOpen(true)}
         onNewChat={handleNewChat}
       />
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        {messages.length === 0 ? (
-          <View style={styles.welcomeContainer}>
-            <View style={styles.heroBadge}>
-              <Ionicons name="sparkles" size={32} color="#6366f1" />
-            </View>
-            <Text style={styles.welcomeTitle}>Ziury AI Mobile</Text>
-            <Text style={styles.welcomeSubtitle}>
-              Swappable AI Brain • Local SQLite Memory • Offline First
-            </Text>
+      <View style={styles.flex}>{renderActiveScreen()}</View>
 
-            <View style={styles.suggestionsContainer}>
-              <Text style={styles.suggestionsTitle}>TRY ASKING:</Text>
-              {suggestions.map((text, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  style={styles.suggestionCard}
-                  onPress={() => handleSend(text)}
-                >
-                  <Ionicons name="chatbox-ellipses-outline" size={16} color="#6366f1" />
-                  <Text style={styles.suggestionText}>{text}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        ) : (
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <ChatMessage message={item} />}
-            contentContainerStyle={styles.messageList}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-          />
-        )}
+      <QuickCaptureFAB onCapture={handleQuickCapture} />
 
-        <ChatInput onSend={handleSend} isLoading={isLoading} />
-      </KeyboardAvoidingView>
+      <NavigationBar currentTab={currentTab} onSelectTab={setCurrentTab} />
 
-      <SettingsModal
-        visible={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        selectedProvider={provider}
-        selectedModel={model}
-        onSelectModel={handleSelectModel}
+      <QuickCaptureModal
+        visible={isCaptureModalOpen}
+        type={captureType}
+        onClose={() => setIsCaptureModalOpen(false)}
+        onRefresh={refreshAllData}
       />
 
       <HistoryDrawer
@@ -234,60 +305,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   flex: {
-    flex: 1,
-  },
-  welcomeContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  heroBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#eef2ff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  welcomeTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 6,
-  },
-  welcomeSubtitle: {
-    fontSize: 13,
-    color: '#6b7280',
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  suggestionsContainer: {
-    width: '100%',
-  },
-  suggestionsTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#9ca3af',
-    marginBottom: 10,
-    letterSpacing: 1,
-  },
-  suggestionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    marginBottom: 8,
-  },
-  suggestionText: {
-    fontSize: 14,
-    color: '#374151',
-    marginLeft: 10,
     flex: 1,
   },
   messageList: {

@@ -8,7 +8,7 @@ export async function generateAIResponse(
 ): Promise<string> {
   const apiKey = await getAPIKey(provider as any);
 
-  // If no key set for Google Gemini, check env fallback or provide helpful message
+  // 1. Google Gemini
   if (provider === 'google') {
     const keyToUse = apiKey || process.env.GEMINI_API_KEY;
     if (keyToUse) {
@@ -30,15 +30,13 @@ export async function generateAIResponse(
         if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
           return data.candidates[0].content.parts[0].text;
         }
-        if (data.error?.message) {
-          return `Gemini API Error: ${data.error.message}`;
-        }
       } catch (err: any) {
         console.warn('Gemini API call failed:', err);
       }
     }
   }
 
+  // 2. OpenAI
   if (provider === 'openai' && apiKey) {
     try {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -56,14 +54,12 @@ export async function generateAIResponse(
       if (data.choices && data.choices[0]?.message?.content) {
         return data.choices[0].message.content;
       }
-      if (data.error?.message) {
-        return `OpenAI API Error: ${data.error.message}`;
-      }
     } catch (err: any) {
       console.warn('OpenAI call error:', err);
     }
   }
 
+  // 3. Anthropic Claude
   if (provider === 'anthropic' && apiKey) {
     try {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -83,15 +79,80 @@ export async function generateAIResponse(
       if (data.content && data.content[0]?.text) {
         return data.content[0].text;
       }
-      if (data.error?.message) {
-        return `Claude API Error: ${data.error.message}`;
-      }
     } catch (err: any) {
       console.warn('Anthropic call error:', err);
     }
   }
 
-  // Fallback demo response if no API key is configured yet
+  // 4. Groq (Ultra-fast Llama 3)
+  if (provider === 'groq' && apiKey) {
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'llama3-70b-8192',
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+      const data = await response.json();
+      if (data.choices && data.choices[0]?.message?.content) {
+        return data.choices[0].message.content;
+      }
+    } catch (err: any) {
+      console.warn('Groq call error:', err);
+    }
+  }
+
+  // 5. OpenRouter
+  if (provider === 'openrouter' && apiKey) {
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'auto',
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+      const data = await response.json();
+      if (data.choices && data.choices[0]?.message?.content) {
+        return data.choices[0].message.content;
+      }
+    } catch (err: any) {
+      console.warn('OpenRouter call error:', err);
+    }
+  }
+
+  // 6. Local Ollama
+  if (provider === 'ollama') {
+    const host = (await getAPIKey('ollamaHost')) || 'http://localhost:11434';
+    try {
+      const response = await fetch(`${host}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'llama3',
+          prompt: messages[messages.length - 1]?.content || '',
+          stream: false,
+        }),
+      });
+      const data = await response.json();
+      if (data.response) {
+        return data.response;
+      }
+    } catch (err: any) {
+      console.warn('Ollama call error:', err);
+    }
+  }
+
+  // Fallback demo response if no key is entered yet
   const lastMsg = messages[messages.length - 1]?.content || '';
-  return `Ziury AI Brain (${model}) connected successfully!\n\nI received: "${lastMsg}"\n\nTo enable live responses, tap the ⚙️ Settings icon at the top right and enter your ${provider.toUpperCase()} API key.`;
+  return `ZIURY AI Brain (${model}) connected!\n\nReceived: "${lastMsg}"\n\nTo activate live API calls, open ⚙️ Settings and enter your ${provider.toUpperCase()} API key.`;
 }

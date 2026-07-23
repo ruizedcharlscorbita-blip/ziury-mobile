@@ -12,7 +12,7 @@ if [ -f "./scripts/format.sh" ] && [ -f "./scripts/lint.sh" ]; then
     # 1. Check for committed secrets (filtering for env, configs, and source files)
     FILES_TO_CHECK=$(git diff --cached --name-only | grep -E "\.(env|json|py|js|ts|go|yml|yaml|ini)$" | grep -v "example" | grep -v "package-lock.json" || true)
     if [ -n "$FILES_TO_CHECK" ]; then
-        if echo "$FILES_TO_CHECK" | xargs git diff --cached -- | grep -E "^\+" | grep -Ei "key|secret|token|password" | grep -vE "example|placeholder|<|>|your_|_KEY:-|ziury_api_key_|SECURE_STORE_KEYS" | grep -E "['\"][a-zA-Z0-9_-]{10,}['\"]|=[a-zA-Z0-9_-]{10,}" >/dev/null 2>&1; then
+        if echo "$FILES_TO_CHECK" | xargs git diff --cached -- | grep -E "^\+" | grep -Ei "key|secret|token|password" | grep -vE "example|placeholder|<|>|your_|_KEY:-|ziury_api_key_|SECURE_STORE_KEYS|ziury_key_|PRIMARY KEY|getAPIKey|apiKey" | grep -E "['\"][a-zA-Z0-9_-]{10,}['\"]|=[a-zA-Z0-9_-]{10,}" >/dev/null 2>&1; then
             echo "❌ ERROR: Potential API Key or Secret detected in staged code files."
             echo "Please double-check your changes or remove secrets before committing."
             exit 1

@@ -25,6 +25,36 @@ export const AVAILABLE_MODELS: AIModelOption[] = [
     provider: 'openai',
     description: 'Flagship multimodal model by OpenAI',
   },
+  {
+    id: 'llama-3-70b-groq',
+    name: 'Llama 3 70B (Groq)',
+    provider: 'groq',
+    description: 'Ultra-fast Llama 3 70B inference on Groq hardware',
+  },
+  {
+    id: 'openrouter-auto',
+    name: 'OpenRouter (Auto)',
+    provider: 'openrouter',
+    description: 'Unified router to access 100+ AI models',
+  },
+  {
+    id: 'cerebras-llama3-8b',
+    name: 'Cerebras Llama 3',
+    provider: 'cerebras',
+    description: 'Wafer-scale engine instant response generation',
+  },
+  {
+    id: 'mistral-large',
+    name: 'Mistral Large',
+    provider: 'mistral',
+    description: 'Top-tier reasoning model by Mistral AI',
+  },
+  {
+    id: 'ollama-local',
+    name: 'Local Ollama (Llama 3)',
+    provider: 'ollama',
+    description: 'Fully offline local LLM server running on device / LAN',
+  },
 ];
 
 export const DEFAULT_PROVIDER = 'google';
