@@ -1,70 +1,41 @@
-# AI Stack v1.0 - Git Ignore Rules
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# Environment variables & secrets
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-*.pem
-*.key
-*.cert
-*.pfx
-secrets/
-credentials/
-config/local.*
-
-# OS files
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# IDEs and Editors
-.vscode/
-.idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.swp
-.fleet/
-.helix/
-.zed/
-
-# Package manager outputs
+# dependencies
 node_modules/
-jspm_packages/
-.pnpm-store/
-.yarn/
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
 
-# Build and Temp outputs
+# Expo
+.expo/
 dist/
-build/
-out/
-tmp/
-temp/
-*.log
+web-build/
+expo-env.d.ts
 
-# Python / Virtual Environments
-.venv/
-venv/
-ENV/
-env/
-__pycache__/
-*.pyc
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
 
-# AI Context tool artifacts (Repomix, RTK, etc.)
-repomix-output.txt
-repomix.config.json
-rtk-output.txt
-code2prompt-output.txt
-*context*.txt
-.repomix/
+# Metro
+.metro-health-check*
 
-# Local specific MCP settings or overrides
-.mcp/local-config.json
-.mcp/litellm.config.yaml
-*.local.json
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android

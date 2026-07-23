@@ -1,4 +1,4 @@
-# Model Context Protocol (MCP) Configuration (Layer 5)
+﻿# Model Context Protocol (MCP) Configuration (Layer 5)
 
 This folder contains Model Context Protocol (MCP) configurations and guidelines to connect your local development environment tools directly to LLMs.
 
@@ -36,11 +36,11 @@ To load MCP servers in your editor or client:
 4. Define the command (e.g. `npx -y @modelcontextprotocol/server-filesystem /path/to/workspace`).
 
 ### Claude Desktop Setup
-Modify your Claude Desktop configuration file (typically at `%APPDATA%\Claude\claude_desktop_config.json` on Windows or `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS) by copying the template in `[config.json](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/.mcp/config.json)`.
+Modify your Claude Desktop configuration file (typically at `%APPDATA%\Claude\claude_desktop_config.json` on Windows or `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS) by copying the template in `[config.json](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/.mcp/config.json)`.
 
 ---
 
 ## 4. Files in This Directory
 
-- **[config.json](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/.mcp/config.json)**: MCP server configuration — filesystem and git tools.
-- **[litellm.config.example.yaml](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/.mcp/litellm.config.example.yaml)**: LiteLLM proxy config template covering Anthropic, OpenAI, Gemini, Mistral, Groq, and Ollama. Copy to `litellm.config.yaml` (gitignored) and start the proxy with `litellm --config .mcp/litellm.config.yaml --port 4000`. See [docs/llm-setup.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/docs/llm-setup.md) for the full walkthrough.
+- **[config.json](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/.mcp/config.json)**: MCP server configuration — filesystem and git tools.
+- **[litellm.config.example.yaml](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/.mcp/litellm.config.example.yaml)**: LiteLLM proxy config template covering Anthropic, OpenAI, Gemini, Mistral, Groq, and Ollama. Copy to `litellm.config.yaml` (gitignored) and start the proxy with `litellm --config .mcp/litellm.config.yaml --port 4000`. See [docs/llm-setup.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/docs/llm-setup.md) for the full walkthrough.

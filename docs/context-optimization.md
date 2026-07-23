@@ -84,4 +84,4 @@ find . -name "*.md" -mmin -60 > active-files.txt
 MCP allows LLM clients (like Cursor or Claude Code) to directly read, search, and edit files using secure local APIs.
 
 ### Usage
-See the detailed guide in `[.mcp/README.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/.mcp/README.md)` for configuration.
+See the detailed guide in `[.mcp/README.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/.mcp/README.md)` for configuration.

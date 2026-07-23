@@ -4,12 +4,12 @@ This directory contains role-specific instructions and system prompts for config
 
 ## Agent Profiles
 
-- `[architect.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/agents/architect.md)`: Instructs the AI as a system architect. Focuses on design patterns, structure, and high-level requirements.
-- `[backend.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/agents/backend.md)`: Instructions for backend code tasks, performance, database schemas, and APIs.
-- `[frontend.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/agents/frontend.md)`: Instructions for frontend components, UI, accessibility, and styles.
-- `[reviewer.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/agents/reviewer.md)`: Rules for reviewing PRs, formatting checks, and security audits.
-- `[researcher.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/agents/researcher.md)`: Guidance for conducting technical evaluations and writing logs.
-- `[tester.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/agents/tester.md)`: Instructions for test-driven development, writing unit, integration, and end-to-end tests.
+- `[architect.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/agents/architect.md)`: Instructs the AI as a system architect. Focuses on design patterns, structure, and high-level requirements.
+- `[backend.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/agents/backend.md)`: Instructions for backend code tasks, performance, database schemas, and APIs.
+- `[frontend.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/agents/frontend.md)`: Instructions for frontend components, UI, accessibility, and styles.
+- `[reviewer.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/agents/reviewer.md)`: Rules for reviewing PRs, formatting checks, and security audits.
+- `[researcher.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/agents/researcher.md)`: Guidance for conducting technical evaluations and writing logs.
+- `[tester.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/agents/tester.md)`: Instructions for test-driven development, writing unit, integration, and end-to-end tests.
 
 ## Best Practices
 - **Role Assignment**: Before delegating a task to a subagent or commencing work in an LLM chat, paste the content of the corresponding markdown file as the system prompt or prepended prompt.

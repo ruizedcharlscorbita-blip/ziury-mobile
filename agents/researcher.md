@@ -11,7 +11,7 @@
 - Core criteria parameters (speed, licensing, installation size).
 
 ## Outputs
-- Technical Research logs (`[templates/research.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/templates/research.md)` format).
+- Technical Research logs (`[templates/research.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/templates/research.md)` format).
 - Clean code examples for the proof-of-concepts.
 - Comparison matrix tables.
 

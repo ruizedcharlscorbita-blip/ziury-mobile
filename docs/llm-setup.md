@@ -1,4 +1,4 @@
-# LLM Provider Setup Guide
+﻿# LLM Provider Setup Guide
 
 This guide covers both ways to connect AI tools to language models in this project: **Tier 1 BYOK** (default, zero setup) and **Tier 2 Proxy** (optional, unified routing via LiteLLM).
 
@@ -10,7 +10,7 @@ The simplest setup. Your AI tools call provider APIs directly using the keys in 
 
 ### Step 1: Fill your `.env`
 
-Open [`.env`](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/.env) and set whichever keys you have:
+Open [`.env`](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/.env) and set whichever keys you have:
 
 ```bash
 ANTHROPIC_API_KEY=sk-ant-api03-...
@@ -203,8 +203,8 @@ Download from [lmstudio.ai](https://lmstudio.ai), load a model, and enable the l
 
 ## References
 
-- [`.env`](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/.env) — Your local environment configuration
-- [`.env.example`](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/.env.example) — Template (safe to commit)
-- [`.mcp/litellm.config.example.yaml`](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/.mcp/litellm.config.example.yaml) — LiteLLM proxy config template
-- [`.mcp/config.json`](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/.mcp/config.json) — MCP server configuration
+- [`.env`](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/.env) — Your local environment configuration
+- [`.env.example`](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/.env.example) — Template (safe to commit)
+- [`.mcp/litellm.config.example.yaml`](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/.mcp/litellm.config.example.yaml) — LiteLLM proxy config template
+- [`.mcp/config.json`](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/.mcp/config.json) — MCP server configuration
 - [LiteLLM Docs](https://docs.litellm.ai/docs/proxy/quick_start)

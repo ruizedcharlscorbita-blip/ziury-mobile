@@ -23,6 +23,6 @@ This file provides context and instructions for AI coding assistants (such as Cl
 
 ## Response Style
 - **Conciseness**: Keep explanations brief and structured. Rely on Markdown headings and lists.
-- **Clickable Links**: Always include relative or absolute links to files and symbols when discussing code (e.g. `[README.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/README.md)`).
+- **Clickable Links**: Always include relative or absolute links to files and symbols when discussing code (e.g. `[README.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/README.md)`).
 - **No Placeholders**: Never generate partial implementations or placeholders. Provide complete files and configurations.
 - **Task Tracking**: Refer to and update the task tracking file at `<appDataDir>/brain/<conversation-id>/task.md` or a local equivalent if appropriate.

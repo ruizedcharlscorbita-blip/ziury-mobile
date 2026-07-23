@@ -1,4 +1,4 @@
-# Workflow: Feature Development
+﻿# Workflow: Feature Development
 
 ## Purpose
 Standard end-to-end recipe for implementing a new feature from initial design to merged pull request.
@@ -59,7 +59,7 @@ Standard end-to-end recipe for implementing a new feature from initial design to
 ---
 
 ## References
-- [STYLEGUIDE.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/STYLEGUIDE.md)
-- [templates/feature.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/templates/feature.md)
-- [templates/design-doc.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/templates/design-doc.md)
-- [templates/pull-request.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/templates/pull-request.md)
+- [STYLEGUIDE.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/STYLEGUIDE.md)
+- [templates/feature.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/templates/feature.md)
+- [templates/design-doc.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/templates/design-doc.md)
+- [templates/pull-request.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/templates/pull-request.md)

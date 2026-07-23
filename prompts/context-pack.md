@@ -1,4 +1,4 @@
-# Prompt: Context Pack for AI Sessions
+﻿# Prompt: Context Pack for AI Sessions
 
 ## Purpose
 Instructions for packaging the right context files into an AI session so the model has everything it needs to assist without wasting tokens on irrelevant content.
@@ -61,6 +61,6 @@ The output path is controlled by `CONTEXT_OUTPUT_PATH` in your `.env` file.
 ---
 
 ## References
-- [CLAUDE.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/CLAUDE.md)
-- [docs/context-optimization.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/docs/context-optimization.md)
-- [prompts/system-header.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/prompts/system-header.md)
+- [CLAUDE.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/CLAUDE.md)
+- [docs/context-optimization.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/docs/context-optimization.md)
+- [prompts/system-header.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/prompts/system-header.md)

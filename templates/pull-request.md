@@ -14,7 +14,7 @@
 ---
 
 ## 🏛️ Related Architectural Decisions
-- Resolves / Refers to `[ADR-XXX](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/knowledge-base/ADR/XXX-title.md)`
+- Resolves / Refers to `[ADR-XXX](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/knowledge-base/ADR/XXX-title.md)`
 
 ---
 

@@ -1,4 +1,4 @@
-# Workflow: Release
+﻿# Workflow: Release
 
 ## Purpose
 Step-by-step release process for cutting a new version of the project — from validation through changelog and tagging.
@@ -72,7 +72,7 @@ Step-by-step release process for cutting a new version of the project — from v
 ---
 
 ## References
-- [versions/CHANGELOG.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/versions/CHANGELOG.md)
-- [versions/v1.0.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/versions/v1.0.md)
-- [knowledge-base/MEMORY.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/knowledge-base/MEMORY.md)
-- [STYLEGUIDE.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/STYLEGUIDE.md)
+- [versions/CHANGELOG.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/versions/CHANGELOG.md)
+- [versions/v1.0.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/versions/v1.0.md)
+- [knowledge-base/MEMORY.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/knowledge-base/MEMORY.md)
+- [STYLEGUIDE.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/STYLEGUIDE.md)

@@ -1,4 +1,4 @@
-# Workflow: Bug Fix
+﻿# Workflow: Bug Fix
 
 ## Purpose
 Structured recipe for identifying, reproducing, fixing, and validating a bug from first report to verified resolution.
@@ -65,6 +65,6 @@ Structured recipe for identifying, reproducing, fixing, and validating a bug fro
 ---
 
 ## References
-- [STYLEGUIDE.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/STYLEGUIDE.md)
-- [templates/bug-report.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/templates/bug-report.md)
-- [templates/pull-request.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/templates/pull-request.md)
+- [STYLEGUIDE.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/STYLEGUIDE.md)
+- [templates/bug-report.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/templates/bug-report.md)
+- [templates/pull-request.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/templates/pull-request.md)

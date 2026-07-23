@@ -1,4 +1,4 @@
-# Workflow: Code Review
+﻿# Workflow: Code Review
 
 ## Purpose
 Consistent process for requesting, performing, and completing code reviews before merging any changes into the main branch.
@@ -51,7 +51,7 @@ A PR may be merged only when:
 ---
 
 ## References
-- [AGENTS.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/AGENTS.md)
-- [STYLEGUIDE.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/STYLEGUIDE.md)
-- [templates/pull-request.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/templates/pull-request.md)
-- [agents/reviewer.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/ZIUR-AI-STACK%20V1/agents/reviewer.md)
+- [AGENTS.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/AGENTS.md)
+- [STYLEGUIDE.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/STYLEGUIDE.md)
+- [templates/pull-request.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/templates/pull-request.md)
+- [agents/reviewer.md](file:///c:/Users/Administrator/Desktop/GEMINI/projects/Ziury-mobile/agents/reviewer.md)
