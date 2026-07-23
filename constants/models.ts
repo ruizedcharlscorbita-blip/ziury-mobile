@@ -2,6 +2,12 @@ import { AIModelOption } from '../types';
 
 export const AVAILABLE_MODELS: AIModelOption[] = [
   {
+    id: 'omnirouter-auto',
+    name: 'OmniRouter (Auto LAN/API)',
+    provider: 'omnirouter',
+    description: 'Dynamic local network proxy or OmniRouter API key endpoint',
+  },
+  {
     id: 'gemini-2.5-flash',
     name: 'Gemini 2.5 Flash',
     provider: 'google',
@@ -38,12 +44,6 @@ export const AVAILABLE_MODELS: AIModelOption[] = [
     description: 'Unified router to access 100+ AI models',
   },
   {
-    id: 'cerebras-llama3-8b',
-    name: 'Cerebras Llama 3',
-    provider: 'cerebras',
-    description: 'Wafer-scale engine instant response generation',
-  },
-  {
     id: 'mistral-large',
     name: 'Mistral Large',
     provider: 'mistral',
@@ -57,5 +57,5 @@ export const AVAILABLE_MODELS: AIModelOption[] = [
   },
 ];
 
-export const DEFAULT_PROVIDER = 'google';
-export const DEFAULT_MODEL = 'gemini-2.5-flash';
+export const DEFAULT_PROVIDER = 'omnirouter';
+export const DEFAULT_MODEL = 'omnirouter-auto';

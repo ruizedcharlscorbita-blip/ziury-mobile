@@ -23,16 +23,12 @@ import { Header } from './components/Header';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatInput } from './components/ChatInput';
 import { NavigationBar, ScreenTab } from './components/NavigationBar';
-import { QuickCaptureFAB, CaptureType } from './components/QuickCaptureFAB';
-import { QuickCaptureModal } from './components/QuickCaptureModal';
 import { HistoryDrawer } from './components/HistoryDrawer';
 
 import { DashboardScreen } from './screens/DashboardScreen';
 import { TimelineScreen } from './screens/TimelineScreen';
 import { NotesScreen } from './screens/NotesScreen';
 import { TasksScreen } from './screens/TasksScreen';
-import { CalendarScreen } from './screens/CalendarScreen';
-import { BudgetScreen } from './screens/BudgetScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 
 import {
@@ -43,7 +39,9 @@ import {
   saveMessage,
   deleteConversation,
   getNotes,
+  saveNote,
   getTasks,
+  saveTask,
   getEvents,
   getTimelineItems,
   getBudgetItems,
@@ -68,8 +66,6 @@ export default function App() {
   // UI modal states
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
-  const [captureType, setCaptureType] = useState<CaptureType | null>(null);
-  const [isCaptureModalOpen, setIsCaptureModalOpen] = useState<boolean>(false);
 
   const flatListRef = useRef<FlatList>(null);
 
@@ -126,13 +122,29 @@ export default function App() {
     await refreshAllData();
   };
 
-  const handleQuickCapture = (type: CaptureType) => {
-    if (type === 'chat') {
-      handleNewChat();
-    } else {
-      setCaptureType(type);
-      setIsCaptureModalOpen(true);
-    }
+  const handleCreateNote = async () => {
+    const now = Date.now();
+    await saveNote({
+      id: 'note_' + now,
+      title: 'New Memory Note',
+      content: 'Tap to edit markdown note content...',
+      createdAt: now,
+      updatedAt: now,
+    });
+    await refreshAllData();
+  };
+
+  const handleCreateTask = async () => {
+    const now = Date.now();
+    await saveTask({
+      id: 'task_' + now,
+      title: 'New Action Task',
+      dueDate: new Date(now + 86400000).toISOString().split('T')[0],
+      isCompleted: false,
+      priority: 'medium',
+      createdAt: now,
+    });
+    await refreshAllData();
   };
 
   const handleSendChat = async (userContent: string) => {
@@ -190,7 +202,7 @@ export default function App() {
         id: 'msg_err_' + Date.now(),
         conversationId: conv.id,
         role: 'assistant',
-        content: 'Error: Failed to connect to AI brain. Please check your API key in Settings.',
+        content: 'Error: Failed to connect to OmniRouter / AI brain. Please check your settings.',
         createdAt: Date.now(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -212,7 +224,7 @@ export default function App() {
             timeline={timeline}
             budget={budget}
             onNavigateTab={setCurrentTab}
-            onQuickCapture={handleQuickCapture}
+            onQuickCapture={() => handleNewChat()}
           />
         );
       case 'timeline':
@@ -238,7 +250,7 @@ export default function App() {
         return (
           <NotesScreen
             notes={notes}
-            onNewNote={() => handleQuickCapture('note')}
+            onNewNote={handleCreateNote}
           />
         );
       case 'tasks':
@@ -246,7 +258,7 @@ export default function App() {
           <TasksScreen
             tasks={tasks}
             onRefresh={refreshAllData}
-            onNewTask={() => handleQuickCapture('task')}
+            onNewTask={handleCreateTask}
           />
         );
       case 'settings':
@@ -255,6 +267,7 @@ export default function App() {
             selectedProvider={provider}
             selectedModel={model}
             onSelectModel={handleSelectModel}
+            onRefreshData={refreshAllData}
           />
         );
       default:
@@ -275,16 +288,7 @@ export default function App() {
 
       <View style={styles.flex}>{renderActiveScreen()}</View>
 
-      <QuickCaptureFAB onCapture={handleQuickCapture} />
-
       <NavigationBar currentTab={currentTab} onSelectTab={setCurrentTab} />
-
-      <QuickCaptureModal
-        visible={isCaptureModalOpen}
-        type={captureType}
-        onClose={() => setIsCaptureModalOpen(false)}
-        onRefresh={refreshAllData}
-      />
 
       <HistoryDrawer
         visible={isHistoryOpen}

@@ -2,14 +2,13 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Task, TimelineItem, BudgetItem } from '../types';
-import { CaptureType } from '../components/QuickCaptureFAB';
 
 interface DashboardScreenProps {
   tasks: Task[];
   timeline: TimelineItem[];
   budget: BudgetItem[];
   onNavigateTab: (tab: any) => void;
-  onQuickCapture: (type: CaptureType) => void;
+  onQuickCapture: () => void;
 }
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({
@@ -63,38 +62,38 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       </View>
 
       {/* Quick Action Tiles */}
-      <Text style={styles.sectionHeader}>QUICK CAPTURE</Text>
+      <Text style={styles.sectionHeader}>QUICK ACCESS</Text>
       <View style={styles.quickGrid}>
         <TouchableOpacity
           style={styles.actionTile}
-          onPress={() => onQuickCapture('note')}
+          onPress={() => onNavigateTab('notes')}
         >
           <Ionicons name="document-text" size={20} color="#6366f1" />
-          <Text style={styles.actionLabel}>New Note</Text>
+          <Text style={styles.actionLabel}>Notes</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.actionTile}
-          onPress={() => onQuickCapture('task')}
+          onPress={() => onNavigateTab('tasks')}
         >
           <Ionicons name="checkbox" size={20} color="#10b981" />
-          <Text style={styles.actionLabel}>Add Task</Text>
+          <Text style={styles.actionLabel}>Tasks</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.actionTile}
-          onPress={() => onQuickCapture('voice')}
+          onPress={() => onNavigateTab('chat')}
         >
-          <Ionicons name="mic" size={20} color="#ec4899" />
-          <Text style={styles.actionLabel}>Voice Note</Text>
+          <Ionicons name="chatbubbles" size={20} color="#ec4899" />
+          <Text style={styles.actionLabel}>AI Chat</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.actionTile}
-          onPress={() => onQuickCapture('budget')}
+          onPress={() => onNavigateTab('settings')}
         >
-          <Ionicons name="wallet" size={20} color="#06b6d4" />
-          <Text style={styles.actionLabel}>Log Expense</Text>
+          <Ionicons name="settings" size={20} color="#06b6d4" />
+          <Text style={styles.actionLabel}>Settings</Text>
         </TouchableOpacity>
       </View>
 

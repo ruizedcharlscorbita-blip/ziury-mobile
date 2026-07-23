@@ -11,6 +11,8 @@ const SECURE_STORE_KEYS: Record<keyof APIKeys, string> = {
   cerebras: 'ziury_key_cerebras',
   mistral: 'ziury_key_mistral',
   ollamaHost: 'ziury_key_ollama_host',
+  omniRouterUrl: 'ziury_key_omni_url',
+  omniRouterKey: 'ziury_key_omni_key',
 };
 
 export async function saveAPIKey(provider: keyof APIKeys, key: string): Promise<void> {
@@ -44,6 +46,8 @@ export async function getAllAPIKeys(): Promise<APIKeys> {
   const cerebras = await getAPIKey('cerebras');
   const mistral = await getAPIKey('mistral');
   const ollamaHost = await getAPIKey('ollamaHost');
+  const omniRouterUrl = await getAPIKey('omniRouterUrl');
+  const omniRouterKey = await getAPIKey('omniRouterKey');
 
   return {
     google: google || undefined,
@@ -54,5 +58,7 @@ export async function getAllAPIKeys(): Promise<APIKeys> {
     cerebras: cerebras || undefined,
     mistral: mistral || undefined,
     ollamaHost: ollamaHost || 'http://localhost:11434',
+    omniRouterUrl: omniRouterUrl || 'http://192.168.1.100:4000',
+    omniRouterKey: omniRouterKey || undefined,
   };
 }

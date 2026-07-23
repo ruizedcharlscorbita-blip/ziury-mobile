@@ -4,17 +4,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { AIProvider, APIKeys } from '../types';
 import { AVAILABLE_MODELS } from '../constants/models';
 import { getAllAPIKeys, saveAPIKey } from '../services/keys';
+import { GoogleSyncCard } from '../components/GoogleSyncCard';
 
 interface SettingsScreenProps {
   selectedProvider: AIProvider;
   selectedModel: string;
   onSelectModel: (provider: AIProvider, modelId: string) => void;
+  onRefreshData?: () => void;
 }
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   selectedProvider,
   selectedModel,
   onSelectModel,
+  onRefreshData,
 }) => {
   const [keys, setKeys] = useState<APIKeys>({});
   const [saved, setSaved] = useState(false);
@@ -29,13 +32,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   };
 
   const handleSave = async () => {
+    if (keys.omniRouterUrl !== undefined) await saveAPIKey('omniRouterUrl', keys.omniRouterUrl);
+    if (keys.omniRouterKey !== undefined) await saveAPIKey('omniRouterKey', keys.omniRouterKey);
     if (keys.google !== undefined) await saveAPIKey('google', keys.google);
     if (keys.anthropic !== undefined) await saveAPIKey('anthropic', keys.anthropic);
     if (keys.openai !== undefined) await saveAPIKey('openai', keys.openai);
     if (keys.groq !== undefined) await saveAPIKey('groq', keys.groq);
     if (keys.openrouter !== undefined) await saveAPIKey('openrouter', keys.openrouter);
-    if (keys.cerebras !== undefined) await saveAPIKey('cerebras', keys.cerebras);
-    if (keys.mistral !== undefined) await saveAPIKey('mistral', keys.mistral);
     if (keys.ollamaHost !== undefined) await saveAPIKey('ollamaHost', keys.ollamaHost);
 
     setSaved(true);
@@ -44,10 +47,38 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Settings & BYOK</Text>
+      <Text style={styles.title}>Settings & Sync</Text>
       <Text style={styles.subtitle}>
-        Bring Your Own Key (BYOK) — Choose your AI provider & model.
+        OmniRouter • Google Account Data Sync • BYOK Configuration
       </Text>
+
+      {/* Google Account Integration */}
+      <GoogleSyncCard onSyncComplete={onRefreshData} />
+
+      {/* OmniRouter Setup */}
+      <Text style={styles.sectionHeader}>OMNIROUTER CONFIGURATION</Text>
+      <View style={styles.card}>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>OmniRouter Base URL (Local LAN / Server)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="http://192.168.1.100:4000"
+            value={keys.omniRouterUrl || ''}
+            onChangeText={(text) => setKeys({ ...keys, omniRouterUrl: text })}
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>OmniRouter API Key (Optional)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter OmniRouter Key"
+            secureTextEntry
+            value={keys.omniRouterKey || ''}
+            onChangeText={(text) => setKeys({ ...keys, omniRouterKey: text })}
+          />
+        </View>
+      </View>
 
       {/* Model Selector */}
       <Text style={styles.sectionHeader}>SELECT ACTIVE MODEL</Text>
@@ -68,77 +99,58 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         );
       })}
 
-      {/* API Key Inputs */}
-      <Text style={[styles.sectionHeader, { marginTop: 24 }]}>API KEYS & ENDPOINTS</Text>
+      {/* Other API Keys */}
+      <Text style={[styles.sectionHeader, { marginTop: 24 }]}>OTHER BYOK PROVIDERS</Text>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Google Gemini Key</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Google Gemini API Key"
-          secureTextEntry
-          value={keys.google || ''}
-          onChangeText={(text) => setKeys({ ...keys, google: text })}
-        />
-      </View>
+      <View style={styles.card}>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Google Gemini API Key</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Google Gemini API Key"
+            secureTextEntry
+            value={keys.google || ''}
+            onChangeText={(text) => setKeys({ ...keys, google: text })}
+          />
+        </View>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Anthropic Claude Key</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Anthropic API Key"
-          secureTextEntry
-          value={keys.anthropic || ''}
-          onChangeText={(text) => setKeys({ ...keys, anthropic: text })}
-        />
-      </View>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Anthropic Claude API Key</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Anthropic API Key"
+            secureTextEntry
+            value={keys.anthropic || ''}
+            onChangeText={(text) => setKeys({ ...keys, anthropic: text })}
+          />
+        </View>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>OpenAI Key</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter OpenAI API Key"
-          secureTextEntry
-          value={keys.openai || ''}
-          onChangeText={(text) => setKeys({ ...keys, openai: text })}
-        />
-      </View>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>OpenAI API Key</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter OpenAI API Key"
+            secureTextEntry
+            value={keys.openai || ''}
+            onChangeText={(text) => setKeys({ ...keys, openai: text })}
+          />
+        </View>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Groq Key (Llama 3 70B)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Groq API Key"
-          secureTextEntry
-          value={keys.groq || ''}
-          onChangeText={(text) => setKeys({ ...keys, groq: text })}
-        />
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>OpenRouter Key</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter OpenRouter Key"
-          secureTextEntry
-          value={keys.openrouter || ''}
-          onChangeText={(text) => setKeys({ ...keys, openrouter: text })}
-        />
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Local Ollama Host URL</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="http://localhost:11434"
-          value={keys.ollamaHost || ''}
-          onChangeText={(text) => setKeys({ ...keys, ollamaHost: text })}
-        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Groq Key (Llama 3 70B)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Groq API Key"
+            secureTextEntry
+            value={keys.groq || ''}
+            onChangeText={(text) => setKeys({ ...keys, groq: text })}
+          />
+        </View>
       </View>
 
       <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
         <Text style={styles.saveBtnText}>
-          {saved ? 'Keys Saved! ✓' : 'Save Key Configuration'}
+          {saved ? 'Configuration Saved! ✓' : 'Save All Settings'}
         </Text>
       </TouchableOpacity>
     </ScrollView>
@@ -171,6 +183,14 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
     marginBottom: 12,
     letterSpacing: 1,
+  },
+  card: {
+    backgroundColor: '#fafafa',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    marginBottom: 20,
   },
   modelCard: {
     backgroundColor: '#fafafa',
@@ -216,6 +236,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     fontSize: 14,
     color: '#111827',
+    backgroundColor: '#ffffff',
   },
   saveBtn: {
     backgroundColor: '#6366f1',

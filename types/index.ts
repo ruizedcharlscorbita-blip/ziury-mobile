@@ -6,7 +6,8 @@ export type AIProvider =
   | 'openrouter'
   | 'cerebras'
   | 'mistral'
-  | 'ollama';
+  | 'ollama'
+  | 'omnirouter';
 
 export interface AIModelOption {
   id: string;
@@ -24,6 +25,8 @@ export interface APIKeys {
   cerebras?: string;
   mistral?: string;
   ollamaHost?: string;
+  omniRouterUrl?: string;
+  omniRouterKey?: string;
 }
 
 export interface Message {
@@ -94,4 +97,13 @@ export interface BudgetItem {
   category: string;
   note?: string;
   timestamp: number;
+}
+
+export interface GoogleSyncStatus {
+  connected: boolean;
+  accountEmail: string;
+  lastSyncedAt?: number;
+  syncedNotesCount: number;
+  syncedTasksCount: number;
+  syncedEventsCount: number;
 }
