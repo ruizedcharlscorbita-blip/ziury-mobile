@@ -8,6 +8,7 @@ import {
   CalendarEvent,
   TimelineItem,
   BudgetItem,
+  AIMemory,
 } from '../types';
 
 let db: any = null;
@@ -85,6 +86,13 @@ export async function initDatabase(): Promise<void> {
         category TEXT NOT NULL,
         note TEXT,
         timestamp INTEGER NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS ai_memories (
+        id TEXT PRIMARY KEY NOT NULL,
+        category TEXT NOT NULL,
+        fact TEXT NOT NULL,
+        createdAt INTEGER NOT NULL
       );
     `);
   } catch (e) {
@@ -329,6 +337,86 @@ export async function getBudgetItems(): Promise<BudgetItem[]> {
   return rows as BudgetItem[];
 }
 
+// ── AI MEMORIES ────────────────────────────────────────────────────────────
+export async function saveAIMemory(mem: AIMemory): Promise<void> {
+  if (Platform.OS === 'web' || !db) {
+    saveToLocalStorage('mem_' + mem.id, mem);
+  } else {
+    await db.runAsync(
+      `INSERT OR REPLACE INTO ai_memories (id, category, fact, createdAt)
+       VALUES (?, ?, ?, ?)`,
+      [mem.id, mem.category, mem.fact, mem.createdAt]
+    );
+  }
+}
+
+export async function getAIMemories(): Promise<AIMemory[]> {
+  if (Platform.OS === 'web' || !db) {
+    return getFromLocalStoragePrefix<AIMemory>('mem_').sort((a, b) => b.createdAt - a.createdAt);
+  }
+  const rows = await db.getAllAsync('SELECT * FROM ai_memories ORDER BY createdAt DESC');
+  return rows as AIMemory[];
+}
+
+// ── BACKUP & DATA EXPORT/IMPORT/CLEAR ─────────────────────────────────────
+export async function exportAllDataJSON(): Promise<string> {
+  const notes = await getNotes();
+  const tasks = await getTasks();
+  const events = await getEvents();
+  const timeline = await getTimelineItems();
+  const budget = await getBudgetItems();
+  const memories = await getAIMemories();
+
+  const data = {
+    version: '1.0',
+    exportedAt: new Date().toISOString(),
+    notes,
+    tasks,
+    events,
+    timeline,
+    budget,
+    memories,
+  };
+
+  return JSON.stringify(data, null, 2);
+}
+
+export async function importDataJSON(jsonStr: string): Promise<void> {
+  const parsed = JSON.parse(jsonStr);
+  if (Array.isArray(parsed.notes)) {
+    for (const n of parsed.notes) await saveNote(n);
+  }
+  if (Array.isArray(parsed.tasks)) {
+    for (const t of parsed.tasks) await saveTask(t);
+  }
+  if (Array.isArray(parsed.events)) {
+    for (const e of parsed.events) await saveEvent(e);
+  }
+  if (Array.isArray(parsed.budget)) {
+    for (const b of parsed.budget) await saveBudgetItem(b);
+  }
+  if (Array.isArray(parsed.memories)) {
+    for (const m of parsed.memories) await saveAIMemory(m);
+  }
+}
+
+export async function clearAllDatabaseData(): Promise<void> {
+  if (Platform.OS === 'web' || !db) {
+    if (typeof window !== 'undefined') window.localStorage.clear();
+  } else {
+    await db.execAsync(`
+      DELETE FROM conversations;
+      DELETE FROM messages;
+      DELETE FROM notes;
+      DELETE FROM tasks;
+      DELETE FROM events;
+      DELETE FROM timeline_items;
+      DELETE FROM budget_items;
+      DELETE FROM ai_memories;
+    `);
+  }
+}
+
 // ── WEB FALLBACK HELPERS ──────────────────────────────────────────────────
 function saveToLocalStorage(key: string, data: any) {
   if (typeof window !== 'undefined') {
@@ -356,3 +444,4 @@ function removeFromLocalStorage(key: string) {
     window.localStorage.removeItem(key);
   }
 }
+

@@ -10,6 +10,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Task } from '../types';
@@ -29,6 +30,14 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
   onDeleteTask,
 }) => {
   const [filter, setFilter] = useState<'pending' | 'completed'>('pending');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handlePullRefresh = async () => {
+    setRefreshing(true);
+    await onRefresh();
+    setRefreshing(false);
+  };
+
 
   // Modal State
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -144,6 +153,13 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({
         data={filteredTasks}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handlePullRefresh}
+            colors={['#6366f1']}
+          />
+        }
         renderItem={({ item }) => {
           const priorityBadgeStyle = getPriorityColor(item.priority);
           return (

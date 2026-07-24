@@ -99,6 +99,13 @@ export interface BudgetItem {
   timestamp: number;
 }
 
+export interface AIMemory {
+  id: string;
+  category: string;
+  fact: string;
+  createdAt: number;
+}
+
 export interface GoogleSyncStatus {
   connected: boolean;
   accountEmail: string;
@@ -107,3 +114,4 @@ export interface GoogleSyncStatus {
   syncedTasksCount: number;
   syncedEventsCount: number;
 }
+

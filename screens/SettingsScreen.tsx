@@ -1,10 +1,80 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AIProvider, APIKeys } from '../types';
 import { AVAILABLE_MODELS } from '../constants/models';
 import { getAllAPIKeys, saveAPIKey } from '../services/keys';
 import { GoogleSyncCard } from '../components/GoogleSyncCard';
+import { validateKeyFormat, testKeyLive, ValidatorResult } from '../services/keyValidator';
+
+interface KeyFieldProps {
+  label: string;
+  provider: string;
+  value: string;
+  placeholder: string;
+  secure?: boolean;
+  onChange: (v: string) => void;
+  fmtResult: ValidatorResult | null;
+  liveResult: ValidatorResult | null;
+  isTesting: boolean;
+  onTest: () => void;
+}
+
+const KeyField: React.FC<KeyFieldProps> = ({
+  label,
+  value,
+  placeholder,
+  secure = true,
+  onChange,
+  fmtResult,
+  liveResult,
+  isTesting,
+  onTest,
+}) => {
+  return (
+    <View style={styles.inputGroup}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.inputRow}>
+        <TextInput
+          style={[styles.input, styles.inputFlex]}
+          placeholder={placeholder}
+          secureTextEntry={secure}
+          value={value}
+          onChangeText={onChange}
+        />
+        {value.trim().length > 0 && (
+          <TouchableOpacity style={styles.testBtn} onPress={onTest} disabled={isTesting}>
+            {isTesting ? (
+              <ActivityIndicator size="small" color="#6366f1" />
+            ) : (
+              <Text style={styles.testBtnText}>Test</Text>
+            )}
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {fmtResult && !liveResult && (
+        <Text style={[styles.statusHint, fmtResult.valid ? styles.hintOk : styles.hintErr]}>
+          {fmtResult.message}
+        </Text>
+      )}
+
+      {liveResult && (
+        <Text style={[styles.statusHint, liveResult.valid ? styles.hintOk : styles.hintErr]}>
+          {liveResult.message}
+        </Text>
+      )}
+    </View>
+  );
+};
 
 interface SettingsScreenProps {
   selectedProvider: AIProvider;
@@ -21,6 +91,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 }) => {
   const [keys, setKeys] = useState<APIKeys>({});
   const [saved, setSaved] = useState(false);
+  const [testResults, setTestResults] = useState<Record<string, ValidatorResult | null>>({});
+  const [testing, setTesting] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadKeys();
@@ -29,6 +101,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const loadKeys = async () => {
     const k = await getAllAPIKeys();
     setKeys(k);
+  };
+
+  const handleTest = useCallback(async (provider: string, key: string) => {
+    setTesting((t) => ({ ...t, [provider]: true }));
+    setTestResults((r) => ({ ...r, [provider]: null }));
+    const result = await testKeyLive(provider, key);
+    setTestResults((r) => ({ ...r, [provider]: result }));
+    setTesting((t) => ({ ...t, [provider]: false }));
+  }, []);
+
+  const fmtResult = (provider: string, key: string | undefined): ValidatorResult | null => {
+    if (!key) return null;
+    return validateKeyFormat(provider, key);
   };
 
   const handleSave = async () => {
@@ -44,13 +129,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     if (onRefreshData) {
       onRefreshData();
     }
-    
-    try {
-      const { NativeModules } = require('react-native');
-      if (NativeModules.DevSettings && NativeModules.DevSettings.reload) {
-        NativeModules.DevSettings.reload();
-      }
-    } catch(e) {}
 
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -69,26 +147,30 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* OmniRouter Setup */}
       <Text style={styles.sectionHeader}>OMNIROUTER CONFIGURATION</Text>
       <View style={styles.card}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>OmniRouter Base URL (Local LAN / Server)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="http://localhost:20128/v1"
-            value={keys.omniRouterUrl || ''}
-            onChangeText={(text) => setKeys({ ...keys, omniRouterUrl: text })}
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>OmniRouter API Key</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="sk-54ed274bf8ec01d3-007f28-3ddd2a56"
-            secureTextEntry
-            value={keys.omniRouterKey || ''}
-            onChangeText={(text) => setKeys({ ...keys, omniRouterKey: text })}
-          />
-        </View>
+        <KeyField
+          label="OmniRouter Base URL (Local LAN / Server)"
+          provider="omniRouterUrl"
+          value={keys.omniRouterUrl || ''}
+          placeholder="http://localhost:20128/v1"
+          secure={false}
+          onChange={(v) => setKeys({ ...keys, omniRouterUrl: v })}
+          fmtResult={fmtResult('omniRouterUrl', keys.omniRouterUrl)}
+          liveResult={testResults['omniRouterUrl'] ?? null}
+          isTesting={testing['omniRouterUrl'] ?? false}
+          onTest={() => handleTest('omniRouterUrl', keys.omniRouterUrl || '')}
+        />
+        <KeyField
+          label="OmniRouter API Key"
+          provider="omniRouterKey"
+          value={keys.omniRouterKey || ''}
+          placeholder="sk-54ed274bf8ec01d3-007f28-3ddd2a56"
+          secure
+          onChange={(v) => setKeys({ ...keys, omniRouterKey: v })}
+          fmtResult={fmtResult('omniRouterKey', keys.omniRouterKey)}
+          liveResult={testResults['omniRouterKey'] ?? null}
+          isTesting={testing['omniRouterKey'] ?? false}
+          onTest={() => handleTest('omniRouterKey', keys.omniRouterKey || '')}
+        />
       </View>
 
       {/* Model Selector */}
@@ -114,70 +196,78 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       <Text style={[styles.sectionHeader, { marginTop: 24 }]}>OTHER BYOK PROVIDERS</Text>
 
       <View style={styles.card}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Google Gemini API Key</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Google Gemini API Key"
-            secureTextEntry
-            value={keys.google || ''}
-            onChangeText={(text) => setKeys({ ...keys, google: text })}
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Anthropic Claude API Key</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Anthropic API Key"
-            secureTextEntry
-            value={keys.anthropic || ''}
-            onChangeText={(text) => setKeys({ ...keys, anthropic: text })}
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>OpenAI API Key</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter OpenAI API Key"
-            secureTextEntry
-            value={keys.openai || ''}
-            onChangeText={(text) => setKeys({ ...keys, openai: text })}
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Groq Key (Llama 3 70B)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Groq API Key"
-            secureTextEntry
-            value={keys.groq || ''}
-            onChangeText={(text) => setKeys({ ...keys, groq: text })}
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>OpenRouter API Key</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter OpenRouter API Key"
-            secureTextEntry
-            value={keys.openrouter || ''}
-            onChangeText={(text) => setKeys({ ...keys, openrouter: text })}
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Local Ollama Host URL</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="http://localhost:11434"
-            value={keys.ollamaHost || ''}
-            onChangeText={(text) => setKeys({ ...keys, ollamaHost: text })}
-          />
-        </View>
+        <KeyField
+          label="Google Gemini API Key"
+          provider="google"
+          value={keys.google || ''}
+          placeholder="Enter Google Gemini API Key"
+          secure
+          onChange={(v) => setKeys({ ...keys, google: v })}
+          fmtResult={fmtResult('google', keys.google)}
+          liveResult={testResults['google'] ?? null}
+          isTesting={testing['google'] ?? false}
+          onTest={() => handleTest('google', keys.google || '')}
+        />
+        <KeyField
+          label="Anthropic Claude API Key"
+          provider="anthropic"
+          value={keys.anthropic || ''}
+          placeholder="Enter Anthropic API Key"
+          secure
+          onChange={(v) => setKeys({ ...keys, anthropic: v })}
+          fmtResult={fmtResult('anthropic', keys.anthropic)}
+          liveResult={testResults['anthropic'] ?? null}
+          isTesting={testing['anthropic'] ?? false}
+          onTest={() => handleTest('anthropic', keys.anthropic || '')}
+        />
+        <KeyField
+          label="OpenAI API Key"
+          provider="openai"
+          value={keys.openai || ''}
+          placeholder="Enter OpenAI API Key"
+          secure
+          onChange={(v) => setKeys({ ...keys, openai: v })}
+          fmtResult={fmtResult('openai', keys.openai)}
+          liveResult={testResults['openai'] ?? null}
+          isTesting={testing['openai'] ?? false}
+          onTest={() => handleTest('openai', keys.openai || '')}
+        />
+        <KeyField
+          label="Groq Key (Llama 3 70B)"
+          provider="groq"
+          value={keys.groq || ''}
+          placeholder="Enter Groq API Key"
+          secure
+          onChange={(v) => setKeys({ ...keys, groq: v })}
+          fmtResult={fmtResult('groq', keys.groq)}
+          liveResult={testResults['groq'] ?? null}
+          isTesting={testing['groq'] ?? false}
+          onTest={() => handleTest('groq', keys.groq || '')}
+        />
+        <KeyField
+          label="OpenRouter API Key"
+          provider="openrouter"
+          value={keys.openrouter || ''}
+          placeholder="Enter OpenRouter API Key"
+          secure
+          onChange={(v) => setKeys({ ...keys, openrouter: v })}
+          fmtResult={fmtResult('openrouter', keys.openrouter)}
+          liveResult={testResults['openrouter'] ?? null}
+          isTesting={testing['openrouter'] ?? false}
+          onTest={() => handleTest('openrouter', keys.openrouter || '')}
+        />
+        <KeyField
+          label="Local Ollama Host URL"
+          provider="ollamaHost"
+          value={keys.ollamaHost || ''}
+          placeholder="http://localhost:11434"
+          secure={false}
+          onChange={(v) => setKeys({ ...keys, ollamaHost: v })}
+          fmtResult={fmtResult('ollamaHost', keys.ollamaHost)}
+          liveResult={testResults['ollamaHost'] ?? null}
+          isTesting={testing['ollamaHost'] ?? false}
+          onTest={() => handleTest('ollamaHost', keys.ollamaHost || '')}
+        />
       </View>
 
       <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
@@ -185,6 +275,45 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           {saved ? 'Configuration Saved! ✓' : 'Save All Settings'}
         </Text>
       </TouchableOpacity>
+
+      {/* Data Backup & Privacy Section */}
+      <Text style={[styles.sectionHeader, { marginTop: 24 }]}>LOCAL DATA & PRIVACY</Text>
+      <View style={styles.card}>
+        <Text style={styles.label}>Offline Data Backup</Text>
+        <Text style={styles.modelDesc}>
+          Export all notes, tasks, events, budget items, and AI memories to a single JSON backup.
+        </Text>
+        <TouchableOpacity
+          style={[styles.saveBtn, { backgroundColor: '#10b981', marginTop: 12 }]}
+          onPress={async () => {
+            try {
+              const { exportAllDataJSON } = await import('../services/database');
+              const json = await exportAllDataJSON();
+              alert(`Export Successful! (${json.length} bytes exported)\n\nSample:\n${json.slice(0, 150)}...`);
+            } catch (err) {
+              alert('Export failed: ' + err);
+            }
+          }}
+        >
+          <Text style={styles.saveBtnText}>Export Backup (JSON)</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.saveBtn, { backgroundColor: '#ef4444', marginTop: 12 }]}
+          onPress={async () => {
+            try {
+              const { clearAllDatabaseData } = await import('../services/database');
+              await clearAllDatabaseData();
+              if (onRefreshData) onRefreshData();
+              alert('All local SQLite data cleared cleanly.');
+            } catch (err) {
+              alert('Clear failed: ' + err);
+            }
+          }}
+        >
+          <Text style={styles.saveBtnText}>Purge All Local Data</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 };
@@ -254,6 +383,13 @@ const styles = StyleSheet.create({
   inputGroup: {
     marginBottom: 14,
   },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  inputFlex: {
+    flex: 1,
+  },
   label: {
     fontSize: 12,
     fontWeight: '600',
@@ -269,6 +405,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#111827',
     backgroundColor: '#ffffff',
+  },
+  testBtn: {
+    backgroundColor: '#eef2ff',
+    paddingHorizontal: 12,
+    height: 44,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+    borderWidth: 1,
+    borderColor: '#c7d2fe',
+  },
+  testBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#6366f1',
+  },
+  statusHint: {
+    fontSize: 11,
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  hintOk: {
+    color: '#10b981',
+  },
+  hintErr: {
+    color: '#ef4444',
   },
   saveBtn: {
     backgroundColor: '#6366f1',

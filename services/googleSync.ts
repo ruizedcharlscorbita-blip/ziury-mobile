@@ -113,10 +113,15 @@ export async function fetchGoogleUserProfile(accessToken: string): Promise<Googl
 }
 
 // Import Real Data from Google APIs
-export async function syncGoogleData(accessToken: string): Promise<{
+export async function syncGoogleData(accessToken?: string): Promise<{
   tasksCount: number;
   eventsCount: number;
 }> {
+  const tokenToUse = accessToken || (await getGoogleToken());
+  if (!tokenToUse) {
+    return { tasksCount: 0, eventsCount: 0 };
+  }
+
   const now = Date.now();
   let tasksCount = 0;
   let eventsCount = 0;
@@ -124,14 +129,14 @@ export async function syncGoogleData(accessToken: string): Promise<{
   // 1. Fetch Real Google Tasks
   try {
     const taskListsRes = await fetch('https://tasks.googleapis.com/tasks/v1/users/@me/lists', {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: { Authorization: `Bearer ${tokenToUse}` },
     });
     if (taskListsRes.ok) {
       const taskListsData = await taskListsRes.json();
       const primaryList = taskListsData.items?.[0]?.id || '@default';
 
       const tasksRes = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${primaryList}/tasks`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: { Authorization: `Bearer ${tokenToUse}` },
       });
       if (tasksRes.ok) {
         const tasksData = await tasksRes.json();
@@ -162,7 +167,7 @@ export async function syncGoogleData(accessToken: string): Promise<{
     const calendarRes = await fetch(
       `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&maxResults=20&singleEvents=true&orderBy=startTime`,
       {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: { Authorization: `Bearer ${tokenToUse}` },
       }
     );
     if (calendarRes.ok) {

@@ -29,7 +29,11 @@ import { DashboardScreen } from './screens/DashboardScreen';
 import { TimelineScreen } from './screens/TimelineScreen';
 import { NotesScreen } from './screens/NotesScreen';
 import { TasksScreen } from './screens/TasksScreen';
+import { BudgetScreen } from './screens/BudgetScreen';
+import { CalendarScreen } from './screens/CalendarScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+
+import { QuickCaptureModal } from './components/QuickCaptureModal';
 
 import {
   initDatabase,
@@ -44,10 +48,13 @@ import {
   saveTask,
   deleteTask,
   getEvents,
+  saveEvent,
   getTimelineItems,
   getBudgetItems,
+  saveBudgetItem,
 } from './services/database';
 import { generateAIResponse } from './services/ai';
+import { syncGoogleData } from './services/googleSync';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<ScreenTab>('dashboard');
@@ -67,6 +74,7 @@ export default function App() {
   // UI modal states
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
+  const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState<boolean>(false);
 
   const flatListRef = useRef<FlatList>(null);
 
@@ -80,6 +88,11 @@ export default function App() {
   };
 
   const refreshAllData = async () => {
+    try {
+      await syncGoogleData();
+    } catch (e) {
+      // Sync quiet fallback
+    }
     const convs = await getConversations();
     const n = await getNotes();
     const t = await getTasks();
@@ -223,6 +236,51 @@ export default function App() {
     }
   };
 
+  const handleSaveQuickNote = async (title: string, content: string) => {
+    const now = Date.now();
+    await saveNote({
+      id: 'note_' + now,
+      title,
+      content,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await refreshAllData();
+  };
+
+  const handleSaveQuickTask = async (title: string, priority: 'low' | 'medium' | 'high') => {
+    const now = Date.now();
+    await saveTask({
+      id: 'task_' + now,
+      title,
+      priority,
+      isCompleted: false,
+      createdAt: now,
+    });
+    await refreshAllData();
+  };
+
+  const handleSaveQuickBudget = async (
+    type: 'income' | 'expense',
+    amount: number,
+    category: string
+  ) => {
+    const now = Date.now();
+    await saveBudgetItem({
+      id: 'bgt_' + now,
+      type,
+      amount,
+      category,
+      timestamp: now,
+    });
+    await refreshAllData();
+  };
+
+  const handleSaveEvent = async (event: CalendarEvent) => {
+    await saveEvent(event);
+    await refreshAllData();
+  };
+
   const activeModelOption = AVAILABLE_MODELS.find((m) => m.id === model);
   const activeModelName = activeModelOption ? activeModelOption.name : model;
 
@@ -235,7 +293,7 @@ export default function App() {
             timeline={timeline}
             budget={budget}
             onNavigateTab={setCurrentTab}
-            onQuickCapture={() => handleNewChat()}
+            onQuickCapture={() => setIsQuickCaptureOpen(true)}
           />
         );
       case 'timeline':
@@ -273,6 +331,21 @@ export default function App() {
             onDeleteTask={handleDeleteTask}
           />
         );
+      case 'budget':
+        return (
+          <BudgetScreen
+            items={budget}
+            onNewBudget={() => setIsQuickCaptureOpen(true)}
+          />
+        );
+      case 'calendar':
+        return (
+          <CalendarScreen
+            events={events}
+            onRefresh={refreshAllData}
+            onSaveEvent={handleSaveEvent}
+          />
+        );
       case 'settings':
         return (
           <SettingsScreen
@@ -301,6 +374,14 @@ export default function App() {
       <View style={styles.flex}>{renderActiveScreen()}</View>
 
       <NavigationBar currentTab={currentTab} onSelectTab={setCurrentTab} />
+
+      <QuickCaptureModal
+        visible={isQuickCaptureOpen}
+        onClose={() => setIsQuickCaptureOpen(false)}
+        onSaveNote={handleSaveQuickNote}
+        onSaveTask={handleSaveQuickTask}
+        onSaveBudget={handleSaveQuickBudget}
+      />
 
       <HistoryDrawer
         visible={isHistoryOpen}
