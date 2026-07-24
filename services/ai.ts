@@ -1,6 +1,12 @@
 import { AIProvider, Message } from '../types';
 import { getAPIKey } from './keys';
-import { getAIMemories } from './database';
+import {
+  getAIMemories,
+  getTasks,
+  getEvents,
+  getNotes,
+  getBudgetItems,
+} from './database';
 
 async function parseSafeResponse(response: Response): Promise<{ data: any; rawText: string; isJson: boolean }> {
   const rawText = await response.text();
@@ -12,31 +18,102 @@ async function parseSafeResponse(response: Response): Promise<{ data: any; rawTe
   }
 }
 
+async function buildFullAppContext(): Promise<string> {
+  const contextParts: string[] = [];
+  const nowStr = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  contextParts.push(`Current Time: ${nowStr}`);
+
+  try {
+    const tasks = await getTasks();
+    const pendingTasks = tasks.filter((t) => !t.isCompleted);
+    if (pendingTasks.length > 0) {
+      const taskLines = pendingTasks.slice(0, 8).map(
+        (t) => `- [${t.priority.toUpperCase()}] ${t.title}${t.dueDate ? ` (Due: ${t.dueDate})` : ''}`
+      ).join('\n');
+      contextParts.push(`📋 PENDING TASKS (${pendingTasks.length} total):\n${taskLines}`);
+    } else if (tasks.length > 0) {
+      contextParts.push(`📋 TASKS: All tasks are completed! ✓`);
+    } else {
+      contextParts.push(`📋 TASKS: No active tasks registered.`);
+    }
+  } catch (e) {}
+
+  try {
+    const events = await getEvents();
+    if (events.length > 0) {
+      const eventLines = events.slice(0, 5).map(
+        (e) => `- ${e.title} at ${e.startDate}${e.location ? ` (${e.location})` : ''}`
+      ).join('\n');
+      contextParts.push(`📅 CALENDAR SCHEDULE:\n${eventLines}`);
+    } else {
+      contextParts.push(`📅 CALENDAR: No upcoming events.`);
+    }
+  } catch (e) {}
+
+  try {
+    const budget = await getBudgetItems();
+    if (budget.length > 0) {
+      let income = 0;
+      let expenses = 0;
+      budget.forEach((b) => {
+        if (b.type === 'income') income += b.amount;
+        else expenses += b.amount;
+      });
+      const net = income - expenses;
+      contextParts.push(
+        `💵 BUDGET OVERVIEW (₱ PHP):\nTotal Income: ₱${income.toFixed(2)} | Total Expenses: ₱${expenses.toFixed(2)} | Net Balance: ₱${net.toFixed(2)}`
+      );
+    }
+  } catch (e) {}
+
+  try {
+    const notes = await getNotes();
+    if (notes.length > 0) {
+      const noteLines = notes.slice(0, 5).map(
+        (n) => `- "${n.title}": ${n.content.slice(0, 60)}`
+      ).join('\n');
+      contextParts.push(`📝 RECENT NOTES:\n${noteLines}`);
+    }
+  } catch (e) {}
+
+  try {
+    const memories = await getAIMemories();
+    if (memories.length > 0) {
+      const memoryLines = memories.slice(0, 5).map(
+        (m) => `- [${m.category}]: ${m.fact}`
+      ).join('\n');
+      contextParts.push(`🧠 SAVED USER MEMORIES & FACTS:\n${memoryLines}`);
+    }
+  } catch (e) {}
+
+  return `[ZIURY REAL-TIME SECOND BRAIN CONTEXT]\n${contextParts.join('\n\n')}`;
+}
+
 export async function generateAIResponse(
   provider: AIProvider,
   model: string,
   messages: Message[]
 ): Promise<string> {
-  // Prep context with SQLite AI memories if available
+  // Prep context with full SQLite app state context
   let processedMessages = [...messages];
   try {
-    const memories = await getAIMemories();
-    if (memories.length > 0) {
-      const memoryText = memories
-        .slice(0, 5)
-        .map((m) => `- [${m.category}]: ${m.fact}`)
-        .join('\n');
-      const systemMemoryMsg: Message = {
-        id: 'sys_mem_' + Date.now(),
-        conversationId: messages[0]?.conversationId || 'default',
-        role: 'system',
-        content: `[ZIURY LOCAL MEMORY CONTEXT]\nUser facts & saved memories:\n${memoryText}`,
-        createdAt: Date.now(),
-      };
-      processedMessages = [systemMemoryMsg, ...messages];
-    }
+    const fullContext = await buildFullAppContext();
+    const systemMemoryMsg: Message = {
+      id: 'sys_app_ctx_' + Date.now(),
+      conversationId: messages[0]?.conversationId || 'default',
+      role: 'system',
+      content: fullContext,
+      createdAt: Date.now(),
+    };
+    processedMessages = [systemMemoryMsg, ...messages];
   } catch (err) {
-    console.warn('Could not load AI memories for context:', err);
+    console.warn('Could not load full app context:', err);
   }
 
   // 1. OmniRouter (Local Network Proxy / Custom OmniRouter API Key)
