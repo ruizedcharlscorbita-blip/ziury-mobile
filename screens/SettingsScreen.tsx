@@ -330,7 +330,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       ) : (
         Object.entries(discoveredModelsMap).map(([providerName, modelList]) => {
           if (!modelList || modelList.length === 0) return null;
-          const isCollapsed = collapsedProviders[providerName] ?? false;
+          // Collapsed by default unless user taps or contains currently selected model
+          const isCollapsed =
+            collapsedProviders[providerName] ??
+            !modelList.some((m) => m.id === selectedModel);
           return (
             <View key={providerName} style={styles.providerGroupCard}>
               <TouchableOpacity
