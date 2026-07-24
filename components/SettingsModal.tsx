@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AIProvider, APIKeys } from '../types';
 import { AVAILABLE_MODELS } from '../constants/models';
