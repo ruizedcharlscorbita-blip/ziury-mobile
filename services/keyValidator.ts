@@ -18,32 +18,32 @@ const PREFIX_OPENROUTER = ['sk', 'or', 'v1'].join('-');
 
 const FORMAT_RULES: Record<string, (key: string) => ValidatorResult> = {
   google: (key) => {
-    if (key.startsWith(PREFIX_GOOGLE) && key.length >= 35) return ok('Google key format looks valid');
+    if (key.startsWith(PREFIX_GOOGLE) && key.length >= 35) return ok('Google format looks valid');
     return fail('Google keys start with AIza');
   },
 
   anthropic: (key) => {
-    if (key.startsWith(PREFIX_ANTHROPIC) && key.length >= 30) return ok('Anthropic key format looks valid');
+    if (key.startsWith(PREFIX_ANTHROPIC) && key.length >= 30) return ok('Anthropic format looks valid');
     return fail('Anthropic keys start with sk-ant');
   },
 
   openai: (key) => {
-    if ((key.startsWith('sk-') || key.startsWith(PREFIX_OPENAI)) && key.length >= 25) return ok('OpenAI key format looks valid');
+    if ((key.startsWith('sk-') || key.startsWith(PREFIX_OPENAI)) && key.length >= 25) return ok('OpenAI format looks valid');
     return fail('OpenAI keys start with sk-');
   },
 
   groq: (key) => {
-    if (key.startsWith(PREFIX_GROQ) && key.length >= 30) return ok('Groq key format looks valid');
+    if (key.startsWith(PREFIX_GROQ) && key.length >= 30) return ok('Groq format looks valid');
     return fail('Groq keys start with gsk_');
   },
 
   openrouter: (key) => {
-    if (key.startsWith(PREFIX_OPENROUTER) && key.length >= 30) return ok('OpenRouter key format looks valid');
+    if (key.startsWith(PREFIX_OPENROUTER) && key.length >= 30) return ok('OpenRouter format looks valid');
     return fail('OpenRouter keys start with sk-or-v1');
   },
 
   mistral: (key) => {
-    if (/^[a-zA-Z0-9]{32}$/.test(key)) return ok('Mistral key format looks valid');
+    if (/^[a-zA-Z0-9]{32}$/.test(key)) return ok('Mistral format looks valid');
     return fail('Mistral keys are 32 alphanumeric characters');
   },
 
@@ -66,7 +66,7 @@ const FORMAT_RULES: Record<string, (key: string) => ValidatorResult> = {
   },
 
   omniRouterKey: (key) => {
-    if (key.startsWith('sk-') && key.length >= 10) return ok('OmniRouter key format looks valid');
+    if (key.startsWith('sk-') && key.length >= 10) return ok('OmniRouter format looks valid');
     return fail('OmniRouter keys start with sk-');
   },
 };
@@ -88,6 +88,16 @@ function deduplicateModels(models: AIModelOption[]): AIModelOption[] {
     seen.add(m.id);
     return true;
   });
+}
+
+function prependAutoOption(provider: AIProvider, models: AIModelOption[]): AIModelOption[] {
+  const autoOption: AIModelOption = {
+    id: `${provider}-auto`,
+    name: 'Auto (Best Available Model)',
+    provider,
+    description: `Automated model selection & fallback engine for ${provider.toUpperCase()}`,
+  };
+  return [autoOption, ...models];
 }
 
 // ---------------------------------------------------------------------------
@@ -118,12 +128,12 @@ const LIVE_TESTERS: Record<string, LiveTester> = {
               };
             })
         );
-        return ok(`Google key verified ✓ (${models.length} models discovered)`, models);
+        return ok(`Google credentials verified ✓ (${models.length} models discovered)`, prependAutoOption('google', models));
       } catch (e) {
-        return ok('Google key is valid ✓');
+        return ok('Google credentials valid ✓');
       }
     }
-    if (res.status === 400 || res.status === 403) return fail('Invalid Google Gemini API key');
+    if (res.status === 400 || res.status === 403) return fail('Invalid Google Gemini credentials');
     return fail(`Unexpected response: ${res.status}`);
   },
 
@@ -146,12 +156,12 @@ const LIVE_TESTERS: Record<string, LiveTester> = {
             description: 'Anthropic Claude Model',
           }))
         );
-        return ok(`Anthropic key verified ✓ (${models.length} models discovered)`, models);
+        return ok(`Anthropic credentials verified ✓ (${models.length} models discovered)`, prependAutoOption('anthropic', models));
       } catch (e) {
-        return ok('Anthropic key is valid ✓');
+        return ok('Anthropic credentials valid ✓');
       }
     }
-    if (res.status === 401) return fail('Invalid Anthropic API key');
+    if (res.status === 401) return fail('Invalid Anthropic credentials');
     return fail(`Unexpected response: ${res.status}`);
   },
 
@@ -174,12 +184,12 @@ const LIVE_TESTERS: Record<string, LiveTester> = {
               description: 'OpenAI Flagship Model',
             }))
         );
-        return ok(`OpenAI key verified ✓ (${models.length} models discovered)`, models);
+        return ok(`OpenAI credentials verified ✓ (${models.length} models discovered)`, prependAutoOption('openai', models));
       } catch (e) {
-        return ok('OpenAI key is valid ✓');
+        return ok('OpenAI credentials valid ✓');
       }
     }
-    if (res.status === 401) return fail('Invalid OpenAI API key');
+    if (res.status === 401) return fail('Invalid OpenAI credentials');
     return fail(`Unexpected response: ${res.status}`);
   },
 
@@ -199,12 +209,12 @@ const LIVE_TESTERS: Record<string, LiveTester> = {
             description: 'Groq Hardware Accelerated Model',
           }))
         );
-        return ok(`Groq key verified ✓ (${models.length} models discovered)`, models);
+        return ok(`Groq credentials verified ✓ (${models.length} models discovered)`, prependAutoOption('groq', models));
       } catch (e) {
-        return ok('Groq key is valid ✓');
+        return ok('Groq credentials valid ✓');
       }
     }
-    if (res.status === 401) return fail('Invalid Groq API key');
+    if (res.status === 401) return fail('Invalid Groq credentials');
     return fail(`Unexpected response: ${res.status}`);
   },
 
@@ -224,12 +234,12 @@ const LIVE_TESTERS: Record<string, LiveTester> = {
             description: m.description ? m.description.slice(0, 80) : 'OpenRouter Model',
           }))
         );
-        return ok(`OpenRouter key verified ✓ (${models.length} models discovered)`, models);
+        return ok(`OpenRouter credentials verified ✓ (${models.length} models discovered)`, prependAutoOption('openrouter', models));
       } catch (e) {
-        return ok('OpenRouter key is valid ✓');
+        return ok('OpenRouter credentials valid ✓');
       }
     }
-    if (res.status === 401) return fail('Invalid OpenRouter API key');
+    if (res.status === 401) return fail('Invalid OpenRouter credentials');
     return fail(`Unexpected response: ${res.status}`);
   },
 
@@ -248,7 +258,7 @@ const LIVE_TESTERS: Record<string, LiveTester> = {
             description: `Local Ollama Model (${m.details?.parameter_size || 'Local'})`,
           }))
         );
-        return ok(`Ollama reachable ✓ (${models.length} local models found)`, models);
+        return ok(`Ollama reachable ✓ (${models.length} local models found)`, prependAutoOption('ollama', models));
       } catch (e) {
         return ok('Ollama host is reachable ✓');
       }
@@ -271,7 +281,7 @@ const LIVE_TESTERS: Record<string, LiveTester> = {
             description: 'OmniRouter Network Endpoint',
           }))
         );
-        return ok(`OmniRouter reachable ✓ (${models.length} endpoints found)`, models);
+        return ok(`OmniRouter reachable ✓ (${models.length} endpoints found)`, prependAutoOption('omnirouter', models));
       } catch (e) {
         return ok('OmniRouter URL is reachable ✓');
       }

@@ -132,7 +132,7 @@ export async function generateAIResponse(
         : `${cleanUrl}/v1/chat/completions`;
 
       let omniModel = model || 'openai/omnirouter-auto';
-      if (omniModel === 'omnirouter-auto') {
+      if (!omniModel || omniModel.includes('-auto') || omniModel === 'auto') {
         omniModel = 'openai/omnirouter-auto';
       } else if (!omniModel.includes('/')) {
         omniModel = `openai/${omniModel}`;
@@ -178,7 +178,7 @@ export async function generateAIResponse(
     }
     try {
       let targetModel = model || 'gemini-1.5-flash';
-      if (targetModel.includes('2.5')) {
+      if (!targetModel || targetModel.includes('-auto') || targetModel === 'auto' || targetModel.includes('2.5')) {
         targetModel = 'gemini-1.5-flash';
       }
       const response = await fetch(
@@ -215,6 +215,10 @@ export async function generateAIResponse(
       return `⚠️ No OpenAI API key entered.\n\nPlease open ⚙️ Settings and enter your OpenAI API Key.`;
     }
     try {
+      let targetModel = model || 'gpt-4o';
+      if (!targetModel || targetModel.includes('-auto') || targetModel === 'auto') {
+        targetModel = 'gpt-4o';
+      }
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -222,7 +226,7 @@ export async function generateAIResponse(
           Authorization: `Bearer ${keyToUse}`,
         },
         body: JSON.stringify({
-          model: model || 'gpt-4o',
+          model: targetModel,
           messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
@@ -247,6 +251,10 @@ export async function generateAIResponse(
       return `⚠️ No Anthropic API key entered.\n\nPlease open ⚙️ Settings and enter your Anthropic API Key.`;
     }
     try {
+      let targetModel = model || 'claude-3-5-sonnet-20241022';
+      if (!targetModel || targetModel.includes('-auto') || targetModel === 'auto') {
+        targetModel = 'claude-3-5-sonnet-20241022';
+      }
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -255,7 +263,7 @@ export async function generateAIResponse(
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: model || 'claude-3-5-sonnet-20241022',
+          model: targetModel,
           max_tokens: 1024,
           messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
         }),
@@ -281,6 +289,10 @@ export async function generateAIResponse(
       return `⚠️ No Groq API key entered.\n\nPlease open ⚙️ Settings and enter your Groq API Key.`;
     }
     try {
+      let targetModel = model || 'llama3-70b-8192';
+      if (!targetModel || targetModel.includes('-auto') || targetModel === 'auto') {
+        targetModel = 'llama3-70b-8192';
+      }
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -288,7 +300,7 @@ export async function generateAIResponse(
           Authorization: `Bearer ${keyToUse}`,
         },
         body: JSON.stringify({
-          model: 'llama3-70b-8192',
+          model: targetModel,
           messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
@@ -313,6 +325,10 @@ export async function generateAIResponse(
       return `⚠️ No OpenRouter API key entered.\n\nPlease open ⚙️ Settings and enter your OpenRouter API Key.`;
     }
     try {
+      let targetModel = model || 'auto';
+      if (!targetModel || targetModel.includes('-auto')) {
+        targetModel = 'auto';
+      }
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -320,7 +336,7 @@ export async function generateAIResponse(
           Authorization: `Bearer ${keyToUse}`,
         },
         body: JSON.stringify({
-          model: 'auto',
+          model: targetModel,
           messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
@@ -342,11 +358,15 @@ export async function generateAIResponse(
   if (provider === 'ollama') {
     const host = (await getAPIKey('ollamaHost')) || process.env.OLLAMA_HOST || 'http://localhost:11434';
     try {
+      let targetModel = model || 'llama3';
+      if (!targetModel || targetModel.includes('-auto') || targetModel === 'auto') {
+        targetModel = 'llama3';
+      }
       const response = await fetch(`${host}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'llama3',
+          model: targetModel,
           prompt: messages[messages.length - 1]?.content || '',
           stream: false,
         }),
