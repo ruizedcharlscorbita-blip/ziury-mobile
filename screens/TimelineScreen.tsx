@@ -1,14 +1,30 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, TextInput, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { TimelineItem } from '../types';
 
 interface TimelineScreenProps {
   items: TimelineItem[];
+  onSaveItem?: (item: TimelineItem) => Promise<void>;
 }
 
-export const TimelineScreen: React.FC<TimelineScreenProps> = ({ items }) => {
+export const TimelineScreen: React.FC<TimelineScreenProps> = ({ items, onSaveItem }) => {
   const [search, setSearch] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<TimelineItem | null>(null);
+
+  const [titleInput, setTitleInput] = useState('');
+  const [summaryInput, setSummaryInput] = useState('');
 
   const filteredItems = items.filter(
     (i) =>
@@ -31,6 +47,28 @@ export const TimelineScreen: React.FC<TimelineScreenProps> = ({ items }) => {
       default:
         return 'sparkles-outline';
     }
+  };
+
+  const openEditModal = (item: TimelineItem) => {
+    setSelectedItem(item);
+    setTitleInput(item.title);
+    setSummaryInput(item.summary);
+    setModalVisible(true);
+  };
+
+  const handleSave = async () => {
+    if (!selectedItem || !titleInput.trim()) return;
+
+    const updated: TimelineItem = {
+      ...selectedItem,
+      title: titleInput.trim(),
+      summary: summaryInput.trim(),
+    };
+
+    if (onSaveItem) {
+      await onSaveItem(updated);
+    }
+    setModalVisible(false);
   };
 
   return (
@@ -69,7 +107,10 @@ export const TimelineScreen: React.FC<TimelineScreenProps> = ({ items }) => {
           });
 
           return (
-            <View style={styles.timelineRow}>
+            <TouchableOpacity
+              style={styles.timelineRow}
+              onPress={() => openEditModal(item)}
+            >
               <View style={styles.timeColumn}>
                 <Text style={styles.dateText}>{dateStr}</Text>
                 <Text style={styles.timeText}>{timeStr}</Text>
@@ -89,7 +130,7 @@ export const TimelineScreen: React.FC<TimelineScreenProps> = ({ items }) => {
                   <Text style={styles.typeBadgeText}>{item.type.toUpperCase()}</Text>
                 </View>
               </View>
-            </View>
+            </TouchableOpacity>
           );
         }}
         ListEmptyComponent={
@@ -97,11 +138,48 @@ export const TimelineScreen: React.FC<TimelineScreenProps> = ({ items }) => {
             <Ionicons name="time-outline" size={48} color="#d1d5db" />
             <Text style={styles.emptyTitle}>Timeline is Empty</Text>
             <Text style={styles.emptySubtitle}>
-              Tap the + button to capture notes, tasks, or voice memories into your life stream.
+              Notes, tasks, and memories captured will appear here.
             </Text>
           </View>
         }
       />
+
+      {/* Edit Memory Modal */}
+      <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Life Memory</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Ionicons name="close" size={22} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.label}>Title</Text>
+            <TextInput
+              style={styles.input}
+              value={titleInput}
+              onChangeText={setTitleInput}
+            />
+
+            <Text style={styles.label}>Memory Details / Summary</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={summaryInput}
+              onChangeText={setSummaryInput}
+              multiline
+              numberOfLines={4}
+            />
+
+            <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+              <Text style={styles.saveBtnText}>Update Memory</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 };
@@ -237,5 +315,61 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 6,
     lineHeight: 18,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#374151',
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  input: {
+    backgroundColor: '#f9fafb',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#111827',
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  saveBtn: {
+    backgroundColor: '#6366f1',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  saveBtnText: {
+    color: '#ffffff',
+    fontWeight: '700',
+    fontSize: 14,
   },
 });

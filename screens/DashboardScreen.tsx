@@ -54,9 +54,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           <Text style={styles.statLabel}>Memories Captured</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.statBox}>
+        <TouchableOpacity
+          style={styles.statBox}
+          onPress={() => onNavigateTab('budget')}
+        >
           <Ionicons name="wallet-outline" size={22} color="#06b6d4" />
-          <Text style={styles.statNumber}>${totalExpense.toFixed(0)}</Text>
+          <Text style={styles.statNumber}>₱{totalExpense.toFixed(0)}</Text>
           <Text style={styles.statLabel}>Expenses</Text>
         </TouchableOpacity>
       </View>

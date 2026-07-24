@@ -82,8 +82,12 @@ export async function generateAIResponse(
       return `⚠️ No Google Gemini API key entered.\n\nPlease open ⚙️ Settings and enter your Google Gemini API Key.`;
     }
     try {
+      let targetModel = model || 'gemini-1.5-flash-latest';
+      if (targetModel === 'gemini-1.5-flash') {
+        targetModel = 'gemini-1.5-flash-latest';
+      }
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${keyToUse}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${keyToUse}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

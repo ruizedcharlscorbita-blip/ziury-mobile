@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  SafeAreaView,
   View,
   FlatList,
   StyleSheet,
@@ -8,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   AIProvider,
   Conversation,
@@ -284,6 +284,33 @@ export default function App() {
   const activeModelOption = AVAILABLE_MODELS.find((m) => m.id === model);
   const activeModelName = activeModelOption ? activeModelOption.name : model;
 
+  const handleSaveNoteObj = async (note: Note) => {
+    await saveNote(note);
+    await refreshAllData();
+  };
+
+  const handleDeleteNoteObj = async (noteId: string) => {
+    await saveNote({
+      id: noteId,
+      title: '',
+      content: '',
+      createdAt: 0,
+      updatedAt: 0,
+    });
+    await refreshAllData();
+  };
+
+  const handleSaveTimelineItemObj = async (item: TimelineItem) => {
+    const { addTimelineItem } = await import('./services/database');
+    await addTimelineItem(item);
+    await refreshAllData();
+  };
+
+  const handleSaveBudgetItemObj = async (item: BudgetItem) => {
+    await saveBudgetItem(item);
+    await refreshAllData();
+  };
+
   const renderActiveScreen = () => {
     switch (currentTab) {
       case 'dashboard':
@@ -297,7 +324,12 @@ export default function App() {
           />
         );
       case 'timeline':
-        return <TimelineScreen items={timeline} />;
+        return (
+          <TimelineScreen
+            items={timeline}
+            onSaveItem={handleSaveTimelineItemObj}
+          />
+        );
       case 'chat':
         return (
           <KeyboardAvoidingView
@@ -319,7 +351,8 @@ export default function App() {
         return (
           <NotesScreen
             notes={notes}
-            onNewNote={handleCreateNote}
+            onSaveNote={handleSaveNoteObj}
+            onDeleteNote={handleDeleteNoteObj}
           />
         );
       case 'tasks':
@@ -335,7 +368,7 @@ export default function App() {
         return (
           <BudgetScreen
             items={budget}
-            onNewBudget={() => setIsQuickCaptureOpen(true)}
+            onSaveBudgetItem={handleSaveBudgetItemObj}
           />
         );
       case 'calendar':
