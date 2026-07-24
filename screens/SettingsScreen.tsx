@@ -197,6 +197,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     setIsSaving(false);
   };
 
+  const [collapsedProviders, setCollapsedProviders] = useState<Record<string, boolean>>({});
+
+  const toggleCollapseProvider = (providerName: string) => {
+    setCollapsedProviders((prev) => ({
+      ...prev,
+      [providerName]: !prev[providerName],
+    }));
+  };
+
   const hasAnyDiscoveredModels = Object.values(discoveredModelsMap).some(
     (arr) => arr && arr.length > 0
   );
@@ -330,35 +339,49 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       ) : (
         Object.entries(discoveredModelsMap).map(([providerName, modelList]) => {
           if (!modelList || modelList.length === 0) return null;
+          const isCollapsed = collapsedProviders[providerName] ?? false;
           return (
             <View key={providerName} style={styles.providerGroupCard}>
-              <Text style={styles.providerGroupHeader}>
-                {providerName.toUpperCase()} ({modelList.length} Models Found)
-              </Text>
-              {modelList.map((m) => {
-                const isSelected = m.id === selectedModel;
-                return (
-                  <TouchableOpacity
-                    key={m.id}
-                    style={[styles.subModelCard, isSelected && styles.modelCardSelected]}
-                    onPress={() => onSelectModel(m.provider, m.id)}
-                  >
-                    <View style={styles.modelRow}>
-                      <View style={styles.radioDotContainer}>
-                        <View style={[styles.radioDot, isSelected && styles.radioDotSelected]} />
+              <TouchableOpacity
+                style={styles.providerGroupHeaderRow}
+                onPress={() => toggleCollapseProvider(providerName)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.providerGroupHeader}>
+                  {providerName.toUpperCase()} ({modelList.length} Models Found)
+                </Text>
+                <Ionicons
+                  name={isCollapsed ? 'chevron-down-outline' : 'chevron-up-outline'}
+                  size={18}
+                  color="#6366f1"
+                />
+              </TouchableOpacity>
+
+              {!isCollapsed &&
+                modelList.map((m) => {
+                  const isSelected = m.id === selectedModel;
+                  return (
+                    <TouchableOpacity
+                      key={m.id}
+                      style={[styles.subModelCard, isSelected && styles.modelCardSelected]}
+                      onPress={() => onSelectModel(m.provider, m.id)}
+                    >
+                      <View style={styles.modelRow}>
+                        <View style={styles.radioDotContainer}>
+                          <View style={[styles.radioDot, isSelected && styles.radioDotSelected]} />
+                        </View>
+                        <View style={{ flex: 1, marginLeft: 8 }}>
+                          <Text style={[styles.modelName, isSelected && styles.modelNameSelected]}>
+                            {m.provider} / {m.name}
+                          </Text>
+                          {m.description ? (
+                            <Text style={styles.modelDesc}>{m.description}</Text>
+                          ) : null}
+                        </View>
                       </View>
-                      <View style={{ flex: 1, marginLeft: 8 }}>
-                        <Text style={[styles.modelName, isSelected && styles.modelNameSelected]}>
-                          {m.provider} / {m.name}
-                        </Text>
-                        {m.description ? (
-                          <Text style={styles.modelDesc}>{m.description}</Text>
-                        ) : null}
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
+                    </TouchableOpacity>
+                  );
+                })}
             </View>
           );
         })
@@ -517,11 +540,17 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
     marginBottom: 12,
   },
+  providerGroupHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 2,
+    marginBottom: 6,
+  },
   providerGroupHeader: {
     fontSize: 12,
     fontWeight: '800',
     color: '#4f46e5',
-    marginBottom: 10,
     letterSpacing: 0.8,
   },
   subModelCard: {
