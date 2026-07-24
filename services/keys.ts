@@ -57,7 +57,7 @@ export async function getAllAPIKeys(): Promise<APIKeys> {
     openrouter: openrouter || undefined,
     cerebras: cerebras || undefined,
     mistral: mistral || undefined,
-    ollamaHost: ollamaHost || 'http://localhost:11434',
+    ollamaHost: ollamaHost || undefined,
     omniRouterUrl: omniRouterUrl || undefined,
     omniRouterKey: omniRouterKey || undefined,
   };

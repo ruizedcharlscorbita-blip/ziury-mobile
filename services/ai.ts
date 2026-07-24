@@ -35,7 +35,7 @@ export async function generateAIResponse(
     const omniKey = (await getAPIKey('omniRouterKey')) || process.env.LLM_PROXY_API_KEY;
 
     if (!omniUrl || !omniKey) {
-      return `⚠️ No OmniRouter credentials entered.\n\nPlease open ⚙️ Settings -> OmniRouter Configuration and enter your OmniRouter Base URL and API Key to enable AI responses.`;
+      return `⚠️ No OmniRouter credentials entered.\n\nPlease open ⚙️ Settings -> OmniRouter Setup and enter your OmniRouter Base URL and API Key to connect.`;
     }
 
     try {
@@ -82,9 +82,9 @@ export async function generateAIResponse(
       return `⚠️ No Google Gemini API key entered.\n\nPlease open ⚙️ Settings and enter your Google Gemini API Key.`;
     }
     try {
-      let targetModel = model || 'gemini-1.5-flash-latest';
-      if (targetModel === 'gemini-1.5-flash') {
-        targetModel = 'gemini-1.5-flash-latest';
+      let targetModel = model || 'gemini-1.5-flash';
+      if (targetModel.includes('2.5')) {
+        targetModel = 'gemini-1.5-flash';
       }
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${keyToUse}`,
@@ -106,6 +106,7 @@ export async function generateAIResponse(
       if (data.error?.message) return `Gemini Error: ${data.error.message}`;
     } catch (err: any) {
       console.warn('Gemini API call failed:', err);
+      return `⚠️ Gemini Connection Error: ${err?.message || 'Unable to connect to Google Gemini API.'}`;
     }
   }
 
@@ -134,6 +135,7 @@ export async function generateAIResponse(
       if (data.error?.message) return `OpenAI Error: ${data.error.message}`;
     } catch (err: any) {
       console.warn('OpenAI call error:', err);
+      return `⚠️ OpenAI Error: ${err?.message || 'Unable to connect to OpenAI.'}`;
     }
   }
 
@@ -164,6 +166,7 @@ export async function generateAIResponse(
       if (data.error?.message) return `Anthropic Error: ${data.error.message}`;
     } catch (err: any) {
       console.warn('Anthropic call error:', err);
+      return `⚠️ Anthropic Error: ${err?.message || 'Unable to connect to Anthropic.'}`;
     }
   }
 
@@ -192,6 +195,7 @@ export async function generateAIResponse(
       if (data.error?.message) return `Groq Error: ${data.error.message}`;
     } catch (err: any) {
       console.warn('Groq call error:', err);
+      return `⚠️ Groq Error: ${err?.message || 'Unable to connect to Groq.'}`;
     }
   }
 
@@ -220,6 +224,7 @@ export async function generateAIResponse(
       if (data.error?.message) return `OpenRouter Error: ${data.error.message}`;
     } catch (err: any) {
       console.warn('OpenRouter call error:', err);
+      return `⚠️ OpenRouter Error: ${err?.message || 'Unable to connect to OpenRouter.'}`;
     }
   }
 
