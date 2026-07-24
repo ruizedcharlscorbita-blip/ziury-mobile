@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import { APIKeys } from '../types';
+import { APIKeys, AIModelOption } from '../types';
 
 const SECURE_STORE_KEYS: Record<keyof APIKeys, string> = {
   google: 'ziury_key_google',
@@ -14,6 +14,9 @@ const SECURE_STORE_KEYS: Record<keyof APIKeys, string> = {
   omniRouterUrl: 'ziury_key_omni_url',
   omniRouterKey: 'ziury_key_omni_key',
 };
+
+const ziury_api_key_discovered_models = 'ziury_discovered_models_json';
+const discoveredModelsCache: Record<string, AIModelOption[]> = {};
 
 export async function saveAPIKey(provider: keyof APIKeys, key: string): Promise<void> {
   const storeKey = SECURE_STORE_KEYS[provider];
@@ -61,4 +64,34 @@ export async function getAllAPIKeys(): Promise<APIKeys> {
     omniRouterUrl: omniRouterUrl || undefined,
     omniRouterKey: omniRouterKey || undefined,
   };
+}
+
+export async function saveDiscoveredModels(provider: string, models: AIModelOption[]): Promise<void> {
+  discoveredModelsCache[provider] = models;
+  try {
+    const raw = JSON.stringify(discoveredModelsCache);
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined') window.localStorage.setItem(ziury_api_key_discovered_models, raw);
+    } else {
+      await SecureStore.setItemAsync(ziury_api_key_discovered_models, raw);
+    }
+  } catch (e) {
+    console.warn('Could not cache discovered models:', e);
+  }
+}
+
+export async function getAllDiscoveredModels(): Promise<Record<string, AIModelOption[]>> {
+  try {
+    let raw: string | null = null;
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined') raw = window.localStorage.getItem(ziury_api_key_discovered_models);
+    } else {
+      raw = await SecureStore.getItemAsync(ziury_api_key_discovered_models);
+    }
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      Object.assign(discoveredModelsCache, parsed);
+    }
+  } catch (e) {}
+  return discoveredModelsCache;
 }

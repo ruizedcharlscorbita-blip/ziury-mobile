@@ -9,9 +9,13 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { AIProvider, APIKeys } from '../types';
-import { AVAILABLE_MODELS } from '../constants/models';
-import { getAllAPIKeys, saveAPIKey } from '../services/keys';
+import { AIProvider, APIKeys, AIModelOption } from '../types';
+import {
+  getAllAPIKeys,
+  saveAPIKey,
+  saveDiscoveredModels,
+  getAllDiscoveredModels,
+} from '../services/keys';
 import { GoogleSyncCard } from '../components/GoogleSyncCard';
 import { validateKeyFormat, testKeyLive, ValidatorResult } from '../services/keyValidator';
 
@@ -49,28 +53,37 @@ const KeyField: React.FC<KeyFieldProps> = ({
           secureTextEntry={secure}
           value={value}
           onChangeText={onChange}
+          autoCapitalize="none"
+          autoCorrect={false}
         />
-        {value.trim().length > 0 && (
-          <TouchableOpacity style={styles.testBtn} onPress={onTest} disabled={isTesting}>
-            {isTesting ? (
-              <ActivityIndicator size="small" color="#6366f1" />
-            ) : (
-              <Text style={styles.testBtnText}>Test</Text>
-            )}
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={[styles.testBtn, isTesting && styles.testBtnDisabled]}
+          onPress={onTest}
+          disabled={isTesting || !value}
+        >
+          {isTesting ? (
+            <ActivityIndicator size="small" color="#6366f1" />
+          ) : (
+            <Text style={styles.testBtnText}>Test & Discover</Text>
+          )}
+        </TouchableOpacity>
       </View>
 
-      {fmtResult && !liveResult && (
-        <Text style={[styles.statusHint, fmtResult.valid ? styles.hintOk : styles.hintErr]}>
+      {/* Format hint */}
+      {fmtResult && (
+        <Text style={[styles.hintText, fmtResult.valid ? styles.hintOk : styles.hintFail]}>
+          {fmtResult.valid ? '✓ ' : '✗ '}
           {fmtResult.message}
         </Text>
       )}
 
+      {/* Live test result */}
       {liveResult && (
-        <Text style={[styles.statusHint, liveResult.valid ? styles.hintOk : styles.hintErr]}>
-          {liveResult.message}
-        </Text>
+        <View style={[styles.liveBadge, liveResult.valid ? styles.liveOk : styles.liveFail]}>
+          <Text style={[styles.liveText, liveResult.valid ? styles.liveTextOk : styles.liveTextFail]}>
+            {liveResult.message}
+          </Text>
+        </View>
       )}
     </View>
   );
@@ -90,12 +103,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onRefreshData,
 }) => {
   const [keys, setKeys] = useState<APIKeys>({});
-  const [saved, setSaved] = useState(false);
-  const [testResults, setTestResults] = useState<Record<string, ValidatorResult | null>>({});
   const [testing, setTesting] = useState<Record<string, boolean>>({});
+  const [testResults, setTestResults] = useState<Record<string, ValidatorResult | null>>({});
+  const [saved, setSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [discoveredModelsMap, setDiscoveredModelsMap] = useState<Record<string, AIModelOption[]>>({});
 
   useEffect(() => {
     loadKeys();
+    loadDiscoveredModels();
   }, []);
 
   const loadKeys = async () => {
@@ -103,11 +119,23 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     setKeys(k);
   };
 
+  const loadDiscoveredModels = async () => {
+    const map = await getAllDiscoveredModels();
+    setDiscoveredModelsMap({ ...map });
+  };
+
   const handleTest = useCallback(async (provider: string, key: string) => {
     setTesting((t) => ({ ...t, [provider]: true }));
     setTestResults((r) => ({ ...r, [provider]: null }));
     const result = await testKeyLive(provider, key);
     setTestResults((r) => ({ ...r, [provider]: result }));
+
+    if (result.valid && result.discoveredModels && result.discoveredModels.length > 0) {
+      const discovered = result.discoveredModels;
+      await saveDiscoveredModels(provider, discovered);
+      setDiscoveredModelsMap((m) => ({ ...m, [provider]: discovered }));
+    }
+
     setTesting((t) => ({ ...t, [provider]: false }));
   }, []);
 
@@ -115,8 +143,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     if (!key) return null;
     return validateKeyFormat(provider, key);
   };
-
-  const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -146,6 +172,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           alert(`❌ Key Validation Failed for ${providerKey.toUpperCase()}:\n\n${liveRes.message}\n\nPlease check your credentials.`);
           hasError = true;
           break;
+        } else if (liveRes.discoveredModels && liveRes.discoveredModels.length > 0) {
+          const discovered = liveRes.discoveredModels;
+          await saveDiscoveredModels(providerKey, discovered);
+          setDiscoveredModelsMap((m) => ({ ...m, [providerKey]: discovered }));
         }
       }
     }
@@ -166,6 +196,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
     setIsSaving(false);
   };
+
+  const hasAnyDiscoveredModels = Object.values(discoveredModelsMap).some(
+    (arr) => arr && arr.length > 0
+  );
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -196,7 +230,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           label="OmniRouter API Key"
           provider="omniRouterKey"
           value={keys.omniRouterKey || ''}
-          placeholder="sk-54ed274bf8ec01d3-007f28-3ddd2a56"
+          placeholder="Enter OmniRouter Key"
           secure
           onChange={(v) => setKeys({ ...keys, omniRouterKey: v })}
           fmtResult={fmtResult('omniRouterKey', keys.omniRouterKey)}
@@ -206,89 +240,69 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         />
       </View>
 
-      {/* Model Selector */}
-      <Text style={styles.sectionHeader}>SELECT ACTIVE MODEL</Text>
-      {AVAILABLE_MODELS.map((m) => {
-        const isSelected = m.id === selectedModel;
-        return (
-          <TouchableOpacity
-            key={m.id}
-            style={[styles.modelCard, isSelected && styles.modelCardSelected]}
-            onPress={() => onSelectModel(m.provider, m.id)}
-          >
-            <View style={styles.modelRow}>
-              <Text style={styles.modelName}>{m.name}</Text>
-              {isSelected && <Ionicons name="checkmark-circle" size={18} color="#6366f1" />}
-            </View>
-            <Text style={styles.modelDesc}>{m.description}</Text>
-          </TouchableOpacity>
-        );
-      })}
-
-      {/* Other API Keys */}
-      <Text style={[styles.sectionHeader, { marginTop: 24 }]}>OTHER BYOK PROVIDERS</Text>
-
+      {/* Provider Keys */}
+      <Text style={styles.sectionHeader}>BYOK — PROVIDER API KEYS</Text>
       <View style={styles.card}>
         <KeyField
           label="Google Gemini API Key"
           provider="google"
           value={keys.google || ''}
-          placeholder="Enter Google Gemini API Key"
-          secure
+          placeholder="Enter Google API Key"
           onChange={(v) => setKeys({ ...keys, google: v })}
           fmtResult={fmtResult('google', keys.google)}
           liveResult={testResults['google'] ?? null}
           isTesting={testing['google'] ?? false}
           onTest={() => handleTest('google', keys.google || '')}
         />
+
         <KeyField
           label="Anthropic Claude API Key"
           provider="anthropic"
           value={keys.anthropic || ''}
           placeholder="Enter Anthropic API Key"
-          secure
           onChange={(v) => setKeys({ ...keys, anthropic: v })}
           fmtResult={fmtResult('anthropic', keys.anthropic)}
           liveResult={testResults['anthropic'] ?? null}
           isTesting={testing['anthropic'] ?? false}
           onTest={() => handleTest('anthropic', keys.anthropic || '')}
         />
+
         <KeyField
           label="OpenAI API Key"
           provider="openai"
           value={keys.openai || ''}
           placeholder="Enter OpenAI API Key"
-          secure
           onChange={(v) => setKeys({ ...keys, openai: v })}
           fmtResult={fmtResult('openai', keys.openai)}
           liveResult={testResults['openai'] ?? null}
           isTesting={testing['openai'] ?? false}
           onTest={() => handleTest('openai', keys.openai || '')}
         />
+
         <KeyField
-          label="Groq Key (Llama 3 70B)"
+          label="Groq API Key"
           provider="groq"
           value={keys.groq || ''}
           placeholder="Enter Groq API Key"
-          secure
           onChange={(v) => setKeys({ ...keys, groq: v })}
           fmtResult={fmtResult('groq', keys.groq)}
           liveResult={testResults['groq'] ?? null}
           isTesting={testing['groq'] ?? false}
           onTest={() => handleTest('groq', keys.groq || '')}
         />
+
         <KeyField
           label="OpenRouter API Key"
           provider="openrouter"
           value={keys.openrouter || ''}
           placeholder="Enter OpenRouter API Key"
-          secure
           onChange={(v) => setKeys({ ...keys, openrouter: v })}
           fmtResult={fmtResult('openrouter', keys.openrouter)}
           liveResult={testResults['openrouter'] ?? null}
           isTesting={testing['openrouter'] ?? false}
           onTest={() => handleTest('openrouter', keys.openrouter || '')}
         />
+
         <KeyField
           label="Local Ollama Host URL"
           provider="ollamaHost"
@@ -303,50 +317,67 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         />
       </View>
 
-      <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-        <Text style={styles.saveBtnText}>
-          {saved ? 'Configuration Saved! ✓' : 'Save All Settings'}
-        </Text>
+      {/* Model Selector grouped by provider */}
+      <Text style={styles.sectionHeader}>DISCOVERED MODELS & SELECTION</Text>
+
+      {!hasAnyDiscoveredModels ? (
+        <View style={styles.emptyModelsCard}>
+          <Ionicons name="information-circle-outline" size={24} color="#6366f1" />
+          <Text style={styles.emptyModelsText}>
+            No validated models available yet. Enter your API Key or host URL above and tap Test & Discover or Save All Settings to fetch available models.
+          </Text>
+        </View>
+      ) : (
+        Object.entries(discoveredModelsMap).map(([providerName, modelList]) => {
+          if (!modelList || modelList.length === 0) return null;
+          return (
+            <View key={providerName} style={styles.providerGroupCard}>
+              <Text style={styles.providerGroupHeader}>
+                {providerName.toUpperCase()} ({modelList.length} Models Found)
+              </Text>
+              {modelList.map((m) => {
+                const isSelected = m.id === selectedModel;
+                return (
+                  <TouchableOpacity
+                    key={m.id}
+                    style={[styles.subModelCard, isSelected && styles.modelCardSelected]}
+                    onPress={() => onSelectModel(m.provider, m.id)}
+                  >
+                    <View style={styles.modelRow}>
+                      <View style={styles.radioDotContainer}>
+                        <View style={[styles.radioDot, isSelected && styles.radioDotSelected]} />
+                      </View>
+                      <View style={{ flex: 1, marginLeft: 8 }}>
+                        <Text style={[styles.modelName, isSelected && styles.modelNameSelected]}>
+                          {m.provider} / {m.name}
+                        </Text>
+                        {m.description ? (
+                          <Text style={styles.modelDesc}>{m.description}</Text>
+                        ) : null}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          );
+        })
+      )}
+
+      {/* Save Button */}
+      <TouchableOpacity
+        style={[styles.saveBtn, isSaving && styles.saveBtnDisabled]}
+        onPress={handleSave}
+        disabled={isSaving}
+      >
+        {isSaving ? (
+          <ActivityIndicator size="small" color="#ffffff" />
+        ) : (
+          <Text style={styles.saveBtnText}>{saved ? '✓ Saved & Reloaded!' : 'Save & Validate All'}</Text>
+        )}
       </TouchableOpacity>
 
-      {/* Data Backup & Privacy Section */}
-      <Text style={[styles.sectionHeader, { marginTop: 24 }]}>LOCAL DATA & PRIVACY</Text>
-      <View style={styles.card}>
-        <Text style={styles.label}>Offline Data Backup</Text>
-        <Text style={styles.modelDesc}>
-          Export all notes, tasks, events, budget items, and AI memories to a single JSON backup.
-        </Text>
-        <TouchableOpacity
-          style={[styles.saveBtn, { backgroundColor: '#10b981', marginTop: 12 }]}
-          onPress={async () => {
-            try {
-              const { exportAllDataJSON } = await import('../services/database');
-              const json = await exportAllDataJSON();
-              alert(`Export Successful! (${json.length} bytes exported)\n\nSample:\n${json.slice(0, 150)}...`);
-            } catch (err) {
-              alert('Export failed: ' + err);
-            }
-          }}
-        >
-          <Text style={styles.saveBtnText}>Export Backup (JSON)</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.saveBtn, { backgroundColor: '#ef4444', marginTop: 12 }]}
-          onPress={async () => {
-            try {
-              const { clearAllDatabaseData } = await import('../services/database');
-              await clearAllDatabaseData();
-              if (onRefreshData) onRefreshData();
-              alert('All local SQLite data cleared cleanly.');
-            } catch (err) {
-              alert('Clear failed: ' + err);
-            }
-          }}
-        >
-          <Text style={styles.saveBtnText}>Purge All Local Data</Text>
-        </TouchableOpacity>
-      </View>
+      <View style={styles.bottomSpace} />
     </ScrollView>
   );
 };
@@ -354,44 +385,151 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8fafc',
   },
   content: {
-    padding: 20,
-    paddingBottom: 60,
+    padding: 16,
   },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '800',
-    color: '#111827',
+    color: '#0f172a',
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 12,
-    color: '#6b7280',
+    color: '#64748b',
     marginTop: 2,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   sectionHeader: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#9ca3af',
-    marginBottom: 12,
-    letterSpacing: 1,
+    color: '#6366f1',
+    letterSpacing: 1.2,
+    marginTop: 20,
+    marginBottom: 8,
   },
   card: {
-    backgroundColor: '#fafafa',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    marginBottom: 20,
+    borderColor: '#e2e8f0',
   },
-  modelCard: {
-    backgroundColor: '#fafafa',
-    borderRadius: 10,
-    padding: 12,
+  inputGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#334155',
+    marginBottom: 6,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  input: {
+    backgroundColor: '#f8fafc',
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: '#cbd5e1',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    fontSize: 13,
+    color: '#0f172a',
+  },
+  inputFlex: {
+    flex: 1,
+  },
+  testBtn: {
+    marginLeft: 8,
+    backgroundColor: '#eef2ff',
+    borderWidth: 1,
+    borderColor: '#c7d2fe',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+  },
+  testBtnDisabled: {
+    opacity: 0.5,
+  },
+  testBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#4f46e5',
+  },
+  hintText: {
+    fontSize: 11,
+    marginTop: 4,
+  },
+  hintOk: {
+    color: '#16a34a',
+  },
+  hintFail: {
+    color: '#dc2626',
+  },
+  liveBadge: {
+    marginTop: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  liveOk: {
+    backgroundColor: '#dcfce7',
+  },
+  liveFail: {
+    backgroundColor: '#fee2e2',
+  },
+  liveText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  liveTextOk: {
+    color: '#15803d',
+  },
+  liveTextFail: {
+    color: '#b91c1c',
+  },
+  emptyModelsCard: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 14,
+    padding: 16,
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  emptyModelsText: {
+    fontSize: 12,
+    color: '#64748b',
+    marginLeft: 12,
+    flex: 1,
+    lineHeight: 18,
+  },
+  providerGroupCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: 12,
+  },
+  providerGroupHeader: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#4f46e5',
+    marginBottom: 10,
+    letterSpacing: 0.8,
+  },
+  subModelCard: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
     marginBottom: 8,
   },
   modelCardSelected: {
@@ -401,82 +539,54 @@ const styles = StyleSheet.create({
   modelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  modelName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  modelDesc: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 2,
-  },
-  inputGroup: {
-    marginBottom: 14,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  inputFlex: {
-    flex: 1,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 4,
-  },
-  input: {
-    height: 44,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    paddingHorizontal: 12,
-    fontSize: 14,
-    color: '#111827',
-    backgroundColor: '#ffffff',
-  },
-  testBtn: {
-    backgroundColor: '#eef2ff',
-    paddingHorizontal: 12,
-    height: 44,
-    borderRadius: 8,
+  radioDotContainer: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: '#94a3b8',
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
-    borderWidth: 1,
-    borderColor: '#c7d2fe',
   },
-  testBtnText: {
-    fontSize: 12,
+  radioDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'transparent',
+  },
+  radioDotSelected: {
+    backgroundColor: '#6366f1',
+  },
+  modelName: {
+    fontSize: 13,
     fontWeight: '700',
-    color: '#6366f1',
+    color: '#1e293b',
   },
-  statusHint: {
+  modelNameSelected: {
+    color: '#4338ca',
+  },
+  modelDesc: {
     fontSize: 11,
-    marginTop: 4,
-    fontWeight: '500',
-  },
-  hintOk: {
-    color: '#10b981',
-  },
-  hintErr: {
-    color: '#ef4444',
+    color: '#64748b',
+    marginTop: 2,
   },
   saveBtn: {
     backgroundColor: '#6366f1',
-    height: 46,
-    borderRadius: 10,
+    borderRadius: 12,
+    paddingVertical: 14,
     alignItems: 'center',
-    justifyContent: 'center',
     marginTop: 12,
+  },
+  saveBtnDisabled: {
+    opacity: 0.6,
   },
   saveBtnText: {
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '700',
+  },
+  bottomSpace: {
+    height: 40,
   },
 });
