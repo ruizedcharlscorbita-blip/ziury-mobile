@@ -116,22 +116,55 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     return validateKeyFormat(provider, key);
   };
 
-  const handleSave = async () => {
-    if (keys.omniRouterUrl !== undefined) await saveAPIKey('omniRouterUrl', keys.omniRouterUrl);
-    if (keys.omniRouterKey !== undefined) await saveAPIKey('omniRouterKey', keys.omniRouterKey);
-    if (keys.google !== undefined) await saveAPIKey('google', keys.google);
-    if (keys.anthropic !== undefined) await saveAPIKey('anthropic', keys.anthropic);
-    if (keys.openai !== undefined) await saveAPIKey('openai', keys.openai);
-    if (keys.groq !== undefined) await saveAPIKey('groq', keys.groq);
-    if (keys.openrouter !== undefined) await saveAPIKey('openrouter', keys.openrouter);
-    if (keys.ollamaHost !== undefined) await saveAPIKey('ollamaHost', keys.ollamaHost);
+  const [isSaving, setIsSaving] = useState(false);
 
-    if (onRefreshData) {
-      onRefreshData();
+  const handleSave = async () => {
+    setIsSaving(true);
+    let hasError = false;
+
+    // Validate active/modified keys before saving
+    const entriesToSave: Array<[keyof APIKeys, string]> = [];
+
+    if (keys.omniRouterUrl) entriesToSave.push(['omniRouterUrl', keys.omniRouterUrl]);
+    if (keys.omniRouterKey) entriesToSave.push(['omniRouterKey', keys.omniRouterKey]);
+    if (keys.google) entriesToSave.push(['google', keys.google]);
+    if (keys.anthropic) entriesToSave.push(['anthropic', keys.anthropic]);
+    if (keys.openai) entriesToSave.push(['openai', keys.openai]);
+    if (keys.groq) entriesToSave.push(['groq', keys.groq]);
+    if (keys.openrouter) entriesToSave.push(['openrouter', keys.openrouter]);
+    if (keys.ollamaHost) entriesToSave.push(['ollamaHost', keys.ollamaHost]);
+
+    // Perform live validation on entered non-empty keys
+    for (const [providerKey, val] of entriesToSave) {
+      if (val && val.trim().length > 0) {
+        setTesting((t) => ({ ...t, [providerKey]: true }));
+        const liveRes = await testKeyLive(providerKey, val.trim());
+        setTestResults((r) => ({ ...r, [providerKey]: liveRes }));
+        setTesting((t) => ({ ...t, [providerKey]: false }));
+
+        if (!liveRes.valid) {
+          alert(`❌ Key Validation Failed for ${providerKey.toUpperCase()}:\n\n${liveRes.message}\n\nPlease check your credentials.`);
+          hasError = true;
+          break;
+        }
+      }
     }
 
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    if (!hasError) {
+      // Save validated keys
+      for (const [providerKey, val] of entriesToSave) {
+        await saveAPIKey(providerKey, val);
+      }
+
+      if (onRefreshData) {
+        onRefreshData();
+      }
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    }
+
+    setIsSaving(false);
   };
 
   return (

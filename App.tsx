@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
+  Text,
+  TouchableOpacity,
   FlatList,
   StyleSheet,
   StatusBar,
@@ -55,11 +57,14 @@ import {
 } from './services/database';
 import { generateAIResponse } from './services/ai';
 import { syncGoogleData } from './services/googleSync';
+import { getAllAPIKeys } from './services/keys';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<ScreenTab>('dashboard');
   const [provider, setProvider] = useState<AIProvider>(DEFAULT_PROVIDER);
   const [model, setModel] = useState<string>(DEFAULT_MODEL);
+  const [isBrainActive, setIsBrainActive] = useState<boolean>(false);
 
   // Data states
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -81,6 +86,29 @@ export default function App() {
   useEffect(() => {
     bootstrapApp();
   }, []);
+
+  const checkBrainStatus = async (currentProv: AIProvider) => {
+    const keys = await getAllAPIKeys();
+    let active = false;
+
+    if (currentProv === 'omnirouter') {
+      active = Boolean(keys.omniRouterUrl && keys.omniRouterKey);
+    } else if (currentProv === 'google') {
+      active = Boolean(keys.google || process.env.GEMINI_API_KEY);
+    } else if (currentProv === 'openai') {
+      active = Boolean(keys.openai || process.env.OPENAI_API_KEY);
+    } else if (currentProv === 'anthropic') {
+      active = Boolean(keys.anthropic || process.env.ANTHROPIC_API_KEY);
+    } else if (currentProv === 'groq') {
+      active = Boolean(keys.groq || process.env.GROQ_API_KEY);
+    } else if (currentProv === 'openrouter') {
+      active = Boolean(keys.openrouter);
+    } else if (currentProv === 'ollama') {
+      active = Boolean(keys.ollamaHost);
+    }
+
+    setIsBrainActive(active);
+  };
 
   const bootstrapApp = async () => {
     await initDatabase();
@@ -106,11 +134,14 @@ export default function App() {
     setEvents(e);
     setTimeline(tl);
     setBudget(b);
+
+    await checkBrainStatus(provider);
   };
 
   const handleSelectModel = (newProvider: AIProvider, newModelId: string) => {
     setProvider(newProvider);
     setModel(newModelId);
+    checkBrainStatus(newProvider);
   };
 
   const handleNewChat = () => {
@@ -336,6 +367,23 @@ export default function App() {
             style={styles.flex}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
+            {!isBrainActive && (
+              <View style={styles.noBrainBanner}>
+                <Ionicons name="warning-outline" size={22} color="#ef4444" />
+                <View style={styles.noBrainContent}>
+                  <Text style={styles.noBrainTitle}>No AI Brain Active</Text>
+                  <Text style={styles.noBrainSubtitle}>
+                    Configure your API key or local host in Settings to enable AI responses.
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.noBrainBtn}
+                  onPress={() => setCurrentTab('settings')}
+                >
+                  <Text style={styles.noBrainBtnText}>Setup</Text>
+                </TouchableOpacity>
+              </View>
+            )}
             <FlatList
               ref={flatListRef}
               data={messages}
@@ -399,6 +447,7 @@ export default function App() {
 
       <Header
         activeModelName={activeModelName}
+        isBrainActive={isBrainActive}
         onOpenSettings={() => setCurrentTab('settings')}
         onOpenHistory={() => setIsHistoryOpen(true)}
         onNewChat={handleNewChat}
@@ -439,5 +488,42 @@ const styles = StyleSheet.create({
   },
   messageList: {
     paddingVertical: 12,
+  },
+  noBrainBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fef2f2',
+    borderColor: '#fecaca',
+    borderWidth: 1,
+    padding: 12,
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 4,
+    borderRadius: 12,
+  },
+  noBrainContent: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  noBrainTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#991b1b',
+  },
+  noBrainSubtitle: {
+    fontSize: 11,
+    color: '#b91c1c',
+    marginTop: 2,
+  },
+  noBrainBtn: {
+    backgroundColor: '#ef4444',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  noBrainBtnText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

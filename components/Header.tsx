@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 interface HeaderProps {
   activeModelName: string;
+  isBrainActive?: boolean;
   onOpenSettings: () => void;
   onOpenHistory: () => void;
   onNewChat: () => void;
@@ -11,6 +12,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   activeModelName,
+  isBrainActive = true,
   onOpenSettings,
   onOpenHistory,
   onNewChat,
@@ -23,10 +25,15 @@ export const Header: React.FC<HeaderProps> = ({
 
       <View style={styles.titleContainer}>
         <Text style={styles.title}>ZIURY</Text>
-        <View style={styles.badge}>
-          <View style={styles.dot} />
-          <Text style={styles.badgeText}>{activeModelName}</Text>
-        </View>
+        <TouchableOpacity
+          style={[styles.badge, !isBrainActive && styles.badgeInactive]}
+          onPress={onOpenSettings}
+        >
+          <View style={[styles.dot, !isBrainActive && styles.dotInactive]} />
+          <Text style={[styles.badgeText, !isBrainActive && styles.badgeTextInactive]}>
+            {isBrainActive ? activeModelName : 'No AI Brain Active'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.rightActions}>
@@ -74,6 +81,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 2,
   },
+  badgeInactive: {
+    backgroundColor: '#fef2f2',
+  },
   dot: {
     width: 6,
     height: 6,
@@ -81,10 +91,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#10b981',
     marginRight: 4,
   },
+  dotInactive: {
+    backgroundColor: '#ef4444',
+  },
   badgeText: {
     fontSize: 10,
     color: '#4f46e5',
     fontWeight: '600',
+  },
+  badgeTextInactive: {
+    color: '#ef4444',
   },
   rightActions: {
     flexDirection: 'row',
