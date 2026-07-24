@@ -2,6 +2,16 @@ import { AIProvider, Message } from '../types';
 import { getAPIKey } from './keys';
 import { getAIMemories } from './database';
 
+async function parseSafeResponse(response: Response): Promise<{ data: any; rawText: string; isJson: boolean }> {
+  const rawText = await response.text();
+  try {
+    const data = JSON.parse(rawText);
+    return { data, rawText, isJson: true };
+  } catch (e) {
+    return { data: null, rawText, isJson: false };
+  }
+}
+
 export async function generateAIResponse(
   provider: AIProvider,
   model: string,
@@ -62,12 +72,20 @@ export async function generateAIResponse(
           messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
-      const data = await response.json();
-      if (data.choices && data.choices[0]?.message?.content) {
-        return data.choices[0].message.content;
+
+      const { data, rawText, isJson } = await parseSafeResponse(response);
+
+      if (isJson && data) {
+        if (data.choices && data.choices[0]?.message?.content) {
+          return data.choices[0].message.content;
+        }
+        if (data.error?.message) {
+          return `OmniRouter Error: ${data.error.message}`;
+        }
       }
-      if (data.error?.message) {
-        return `OmniRouter Error: ${data.error.message}`;
+
+      if (!response.ok) {
+        return `⚠️ OmniRouter Error (${response.status}): ${rawText.slice(0, 150) || 'Server returned non-JSON response'}`;
       }
     } catch (err: any) {
       console.warn('OmniRouter network call error:', err);
@@ -99,11 +117,14 @@ export async function generateAIResponse(
           }),
         }
       );
-      const data = await response.json();
-      if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-        return data.candidates[0].content.parts[0].text;
+      const { data, rawText, isJson } = await parseSafeResponse(response);
+      if (isJson && data) {
+        if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+          return data.candidates[0].content.parts[0].text;
+        }
+        if (data.error?.message) return `Gemini Error: ${data.error.message}`;
       }
-      if (data.error?.message) return `Gemini Error: ${data.error.message}`;
+      return `⚠️ Gemini Response Error (${response.status}): ${rawText.slice(0, 150)}`;
     } catch (err: any) {
       console.warn('Gemini API call failed:', err);
       return `⚠️ Gemini Connection Error: ${err?.message || 'Unable to connect to Google Gemini API.'}`;
@@ -128,11 +149,14 @@ export async function generateAIResponse(
           messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
-      const data = await response.json();
-      if (data.choices && data.choices[0]?.message?.content) {
-        return data.choices[0].message.content;
+      const { data, rawText, isJson } = await parseSafeResponse(response);
+      if (isJson && data) {
+        if (data.choices && data.choices[0]?.message?.content) {
+          return data.choices[0].message.content;
+        }
+        if (data.error?.message) return `OpenAI Error: ${data.error.message}`;
       }
-      if (data.error?.message) return `OpenAI Error: ${data.error.message}`;
+      return `⚠️ OpenAI Response Error (${response.status}): ${rawText.slice(0, 150)}`;
     } catch (err: any) {
       console.warn('OpenAI call error:', err);
       return `⚠️ OpenAI Error: ${err?.message || 'Unable to connect to OpenAI.'}`;
@@ -159,11 +183,14 @@ export async function generateAIResponse(
           messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
-      const data = await response.json();
-      if (data.content && data.content[0]?.text) {
-        return data.content[0].text;
+      const { data, rawText, isJson } = await parseSafeResponse(response);
+      if (isJson && data) {
+        if (data.content && data.content[0]?.text) {
+          return data.content[0].text;
+        }
+        if (data.error?.message) return `Anthropic Error: ${data.error.message}`;
       }
-      if (data.error?.message) return `Anthropic Error: ${data.error.message}`;
+      return `⚠️ Anthropic Response Error (${response.status}): ${rawText.slice(0, 150)}`;
     } catch (err: any) {
       console.warn('Anthropic call error:', err);
       return `⚠️ Anthropic Error: ${err?.message || 'Unable to connect to Anthropic.'}`;
@@ -188,11 +215,14 @@ export async function generateAIResponse(
           messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
-      const data = await response.json();
-      if (data.choices && data.choices[0]?.message?.content) {
-        return data.choices[0].message.content;
+      const { data, rawText, isJson } = await parseSafeResponse(response);
+      if (isJson && data) {
+        if (data.choices && data.choices[0]?.message?.content) {
+          return data.choices[0].message.content;
+        }
+        if (data.error?.message) return `Groq Error: ${data.error.message}`;
       }
-      if (data.error?.message) return `Groq Error: ${data.error.message}`;
+      return `⚠️ Groq Response Error (${response.status}): ${rawText.slice(0, 150)}`;
     } catch (err: any) {
       console.warn('Groq call error:', err);
       return `⚠️ Groq Error: ${err?.message || 'Unable to connect to Groq.'}`;
@@ -217,11 +247,14 @@ export async function generateAIResponse(
           messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
-      const data = await response.json();
-      if (data.choices && data.choices[0]?.message?.content) {
-        return data.choices[0].message.content;
+      const { data, rawText, isJson } = await parseSafeResponse(response);
+      if (isJson && data) {
+        if (data.choices && data.choices[0]?.message?.content) {
+          return data.choices[0].message.content;
+        }
+        if (data.error?.message) return `OpenRouter Error: ${data.error.message}`;
       }
-      if (data.error?.message) return `OpenRouter Error: ${data.error.message}`;
+      return `⚠️ OpenRouter Response Error (${response.status}): ${rawText.slice(0, 150)}`;
     } catch (err: any) {
       console.warn('OpenRouter call error:', err);
       return `⚠️ OpenRouter Error: ${err?.message || 'Unable to connect to OpenRouter.'}`;
@@ -241,11 +274,14 @@ export async function generateAIResponse(
           stream: false,
         }),
       });
-      const data = await response.json();
-      if (data.response) {
-        return data.response;
+      const { data, rawText, isJson } = await parseSafeResponse(response);
+      if (isJson && data) {
+        if (data.response) {
+          return data.response;
+        }
+        if (data.error) return `Ollama Error: ${data.error}`;
       }
-      if (data.error) return `Ollama Error: ${data.error}`;
+      return `⚠️ Ollama Response Error (${response.status}): ${rawText.slice(0, 150)}`;
     } catch (err: any) {
       console.warn('Ollama call error:', err);
       return `⚠️ Unable to connect to Local Ollama at ${host}.\n\nPlease ensure Ollama is running locally.`;
