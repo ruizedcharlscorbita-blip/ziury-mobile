@@ -18,6 +18,47 @@ async function parseSafeResponse(response: Response): Promise<{ data: any; rawTe
   }
 }
 
+function cleanAIResponseText(rawText: string): string {
+  if (!rawText) return '';
+  let cleaned = rawText;
+
+  // 1. Remove <thought>...</thought> or <reasoning>...</reasoning> blocks
+  cleaned = cleaned.replace(/<thought>[\s\S]*?<\/thought>/gi, '');
+  cleaned = cleaned.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, '');
+
+  // 2. Filter out internal chain-of-thought planning bullet lines
+  const lines = cleaned.split('\n');
+  const filteredLines: string[] = [];
+  let isInsideThinkingBlock = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (
+      trimmed.startsWith('* The user said') ||
+      trimmed.startsWith('* The previous context') ||
+      trimmed.startsWith('* Acknowledge the') ||
+      trimmed.startsWith('* Maintain the') ||
+      trimmed.startsWith('* Provide a quick status') ||
+      trimmed.startsWith('* Call to Action') ||
+      trimmed.startsWith('* Keep it casual') ||
+      trimmed.startsWith('* Greeting:') ||
+      trimmed.startsWith('* Status Update:')
+    ) {
+      isInsideThinkingBlock = true;
+      continue;
+    }
+    if (isInsideThinkingBlock && (trimmed.startsWith('*') || trimmed === '')) {
+      continue;
+    } else {
+      isInsideThinkingBlock = false;
+      filteredLines.push(line);
+    }
+  }
+
+  cleaned = filteredLines.join('\n').trim();
+  return cleaned;
+}
+
 async function buildFullAppContext(): Promise<string> {
   const contextParts: string[] = [];
   const nowStr = new Date().toLocaleDateString('en-US', {
@@ -92,7 +133,16 @@ async function buildFullAppContext(): Promise<string> {
     }
   } catch (e) {}
 
-  return `[ZIURY REAL-TIME SECOND BRAIN CONTEXT]\n${contextParts.join('\n\n')}`;
+  return `You are Ziury, an intelligent, friendly, and efficient personal Second Brain AI assistant.
+
+CRITICAL ASSISTANT DIRECTIVES:
+- Provide ONLY your final, natural, direct answer to the user.
+- NEVER output internal thinking steps, chain-of-thought analysis, prompt restatements, or planning bullet points.
+- Structure your response cleanly with good paragraph spacing and bullet points so it is easy to read on mobile screens.
+- Use relevant emojis/icons naturally (e.g. 📋 for tasks, 📅 for schedule, 💵 for budget) when discussing user data, but keep tone conversational and concise.
+
+[ZIURY REAL-TIME SECOND BRAIN CONTEXT]
+${contextParts.join('\n\n')}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -131,7 +181,7 @@ async function callGoogleWithFallback(key: string, requestedModel: string, proce
 
       const { data, isJson } = await parseSafeResponse(response);
       if (isJson && data && data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-        return data.candidates[0].content.parts[0].text;
+        return cleanAIResponseText(data.candidates[0].content.parts[0].text);
       }
     } catch (e) {
       console.warn(`Google model ${targetModel} failed:`, e);
@@ -169,7 +219,7 @@ async function callOpenAIWithFallback(key: string, requestedModel: string, proce
 
       const { data, isJson } = await parseSafeResponse(response);
       if (isJson && data && data.choices && data.choices[0]?.message?.content) {
-        return data.choices[0].message.content;
+        return cleanAIResponseText(data.choices[0].message.content);
       }
     } catch (e) {
       console.warn(`OpenAI model ${targetModel} failed:`, e);
@@ -209,7 +259,7 @@ async function callAnthropicWithFallback(key: string, requestedModel: string, pr
 
       const { data, isJson } = await parseSafeResponse(response);
       if (isJson && data && data.content && data.content[0]?.text) {
-        return data.content[0].text;
+        return cleanAIResponseText(data.content[0].text);
       }
     } catch (e) {
       console.warn(`Anthropic model ${targetModel} failed:`, e);
@@ -246,7 +296,7 @@ async function callGroqWithFallback(key: string, requestedModel: string, process
 
       const { data, isJson } = await parseSafeResponse(response);
       if (isJson && data && data.choices && data.choices[0]?.message?.content) {
-        return data.choices[0].message.content;
+        return cleanAIResponseText(data.choices[0].message.content);
       }
     } catch (e) {
       console.warn(`Groq model ${targetModel} failed:`, e);
@@ -281,7 +331,7 @@ async function callOpenRouterWithFallback(key: string, requestedModel: string, p
 
       const { data, isJson } = await parseSafeResponse(response);
       if (isJson && data && data.choices && data.choices[0]?.message?.content) {
-        return data.choices[0].message.content;
+        return cleanAIResponseText(data.choices[0].message.content);
       }
     } catch (e) {
       console.warn(`OpenRouter model ${targetModel} failed:`, e);
@@ -328,7 +378,7 @@ async function callOmniRouterWithFallback(url: string, key: string, requestedMod
 
       const { data, isJson } = await parseSafeResponse(response);
       if (isJson && data && data.choices && data.choices[0]?.message?.content) {
-        return data.choices[0].message.content;
+        return cleanAIResponseText(data.choices[0].message.content);
       }
     } catch (e) {
       console.warn(`OmniRouter model ${targetModel} failed:`, e);
@@ -361,7 +411,6 @@ export async function generateAIResponse(
     console.warn('Could not load full app context:', err);
   }
 
-  // Define primary execution strategy based on selected provider
   const tryProvider = async (targetProvider: AIProvider, targetModel: string): Promise<string | null> => {
     if (targetProvider === 'google') {
       const key = (await getAPIKey('google')) || process.env.GEMINI_API_KEY;
@@ -391,11 +440,9 @@ export async function generateAIResponse(
     return null;
   };
 
-  // 1. First attempt: Primary Provider selected by user
   const primaryResult = await tryProvider(provider, model);
   if (primaryResult) return primaryResult;
 
-  // 2. Fallback Order: Try all other configured providers sequentially
   const fallbackOrder: AIProvider[] = [
     'google',
     'omnirouter',
