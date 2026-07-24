@@ -1,5 +1,5 @@
 import { AIProvider, Message } from '../types';
-import { getAPIKey } from './keys';
+import { getAPIKey, getAllDiscoveredModels } from './keys';
 import {
   getAIMemories,
   getTasks,
@@ -95,12 +95,257 @@ async function buildFullAppContext(): Promise<string> {
   return `[ZIURY REAL-TIME SECOND BRAIN CONTEXT]\n${contextParts.join('\n\n')}`;
 }
 
+// ---------------------------------------------------------------------------
+// PROVIDER CALLERS WITH MULTI-MODEL FALLBACK QUEUES
+// ---------------------------------------------------------------------------
+
+async function callGoogleWithFallback(key: string, requestedModel: string, processedMessages: Message[]): Promise<string | null> {
+  const discoveredMap = await getAllDiscoveredModels();
+  const discoveredGoogle = (discoveredMap['google'] || []).map((m) => m.id).filter((id) => !id.endsWith('-auto'));
+
+  const candidates = Array.from(new Set([
+    requestedModel,
+    ...discoveredGoogle,
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
+    'gemini-1.0-pro',
+  ])).filter((m) => m && !m.includes('-auto') && m !== 'auto');
+
+  for (const targetModel of candidates) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(targetModel)}:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: processedMessages.map((m) => ({
+              role: m.role === 'user' ? 'user' : m.role === 'system' ? 'user' : 'model',
+              parts: [{ text: m.content }],
+            })),
+          }),
+        }
+      );
+
+      const { data, isJson } = await parseSafeResponse(response);
+      if (isJson && data && data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+        return data.candidates[0].content.parts[0].text;
+      }
+    } catch (e) {
+      console.warn(`Google model ${targetModel} failed:`, e);
+    }
+  }
+  return null;
+}
+
+async function callOpenAIWithFallback(key: string, requestedModel: string, processedMessages: Message[]): Promise<string | null> {
+  const discoveredMap = await getAllDiscoveredModels();
+  const discoveredOpenAI = (discoveredMap['openai'] || []).map((m) => m.id).filter((id) => !id.endsWith('-auto'));
+
+  const candidates = Array.from(new Set([
+    requestedModel,
+    ...discoveredOpenAI,
+    'gpt-4o',
+    'gpt-4o-mini',
+    'gpt-4-turbo',
+    'gpt-3.5-turbo',
+  ])).filter((m) => m && !m.includes('-auto') && m !== 'auto');
+
+  for (const targetModel of candidates) {
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${key}`,
+        },
+        body: JSON.stringify({
+          model: targetModel,
+          messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+
+      const { data, isJson } = await parseSafeResponse(response);
+      if (isJson && data && data.choices && data.choices[0]?.message?.content) {
+        return data.choices[0].message.content;
+      }
+    } catch (e) {
+      console.warn(`OpenAI model ${targetModel} failed:`, e);
+    }
+  }
+  return null;
+}
+
+async function callAnthropicWithFallback(key: string, requestedModel: string, processedMessages: Message[]): Promise<string | null> {
+  const discoveredMap = await getAllDiscoveredModels();
+  const discoveredAnthropic = (discoveredMap['anthropic'] || []).map((m) => m.id).filter((id) => !id.endsWith('-auto'));
+
+  const candidates = Array.from(new Set([
+    requestedModel,
+    ...discoveredAnthropic,
+    'claude-3-5-sonnet-20241022',
+    'claude-3-5-haiku-20241022',
+    'claude-3-opus-20240229',
+    'claude-3-haiku-20240307',
+  ])).filter((m) => m && !m.includes('-auto') && m !== 'auto');
+
+  for (const targetModel of candidates) {
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: targetModel,
+          max_tokens: 1024,
+          messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+
+      const { data, isJson } = await parseSafeResponse(response);
+      if (isJson && data && data.content && data.content[0]?.text) {
+        return data.content[0].text;
+      }
+    } catch (e) {
+      console.warn(`Anthropic model ${targetModel} failed:`, e);
+    }
+  }
+  return null;
+}
+
+async function callGroqWithFallback(key: string, requestedModel: string, processedMessages: Message[]): Promise<string | null> {
+  const discoveredMap = await getAllDiscoveredModels();
+  const discoveredGroq = (discoveredMap['groq'] || []).map((m) => m.id).filter((id) => !id.endsWith('-auto'));
+
+  const candidates = Array.from(new Set([
+    requestedModel,
+    ...discoveredGroq,
+    'llama3-70b-8192',
+    'llama3-8b-8192',
+    'mixtral-8x7b-32768',
+  ])).filter((m) => m && !m.includes('-auto') && m !== 'auto');
+
+  for (const targetModel of candidates) {
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${key}`,
+        },
+        body: JSON.stringify({
+          model: targetModel,
+          messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+
+      const { data, isJson } = await parseSafeResponse(response);
+      if (isJson && data && data.choices && data.choices[0]?.message?.content) {
+        return data.choices[0].message.content;
+      }
+    } catch (e) {
+      console.warn(`Groq model ${targetModel} failed:`, e);
+    }
+  }
+  return null;
+}
+
+async function callOpenRouterWithFallback(key: string, requestedModel: string, processedMessages: Message[]): Promise<string | null> {
+  const discoveredMap = await getAllDiscoveredModels();
+  const discoveredOR = (discoveredMap['openrouter'] || []).map((m) => m.id).filter((id) => !id.endsWith('-auto'));
+
+  const candidates = Array.from(new Set([
+    requestedModel,
+    'auto',
+    ...discoveredOR,
+  ])).filter((m) => m && !m.includes('-auto'));
+
+  for (const targetModel of candidates) {
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${key}`,
+        },
+        body: JSON.stringify({
+          model: targetModel,
+          messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+
+      const { data, isJson } = await parseSafeResponse(response);
+      if (isJson && data && data.choices && data.choices[0]?.message?.content) {
+        return data.choices[0].message.content;
+      }
+    } catch (e) {
+      console.warn(`OpenRouter model ${targetModel} failed:`, e);
+    }
+  }
+  return null;
+}
+
+async function callOmniRouterWithFallback(url: string, key: string, requestedModel: string, processedMessages: Message[]): Promise<string | null> {
+  const cleanUrl = url.replace(/\/+$/, '');
+  const endpoint = cleanUrl.endsWith('/v1')
+    ? `${cleanUrl}/chat/completions`
+    : `${cleanUrl}/v1/chat/completions`;
+
+  const discoveredMap = await getAllDiscoveredModels();
+  const discoveredOmni = (discoveredMap['omnirouter'] || []).map((m) => m.id).filter((id) => !id.endsWith('-auto'));
+
+  let omniModel = requestedModel || 'openai/omnirouter-auto';
+  if (!omniModel || omniModel.includes('-auto') || omniModel === 'auto') {
+    omniModel = 'openai/omnirouter-auto';
+  } else if (!omniModel.includes('/')) {
+    omniModel = `openai/${omniModel}`;
+  }
+
+  const candidates = Array.from(new Set([
+    omniModel,
+    'openai/omnirouter-auto',
+    ...discoveredOmni,
+  ]));
+
+  for (const targetModel of candidates) {
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${key}`,
+        },
+        body: JSON.stringify({
+          model: targetModel,
+          messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+
+      const { data, isJson } = await parseSafeResponse(response);
+      if (isJson && data && data.choices && data.choices[0]?.message?.content) {
+        return data.choices[0].message.content;
+      }
+    } catch (e) {
+      console.warn(`OmniRouter model ${targetModel} failed:`, e);
+    }
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// MAIN GENERATE ENTRYPOINT WITH CROSS-PROVIDER FAILOVER
+// ---------------------------------------------------------------------------
+
 export async function generateAIResponse(
   provider: AIProvider,
   model: string,
   messages: Message[]
 ): Promise<string> {
-  // Prep context with full SQLite app state context
   let processedMessages = [...messages];
   try {
     const fullContext = await buildFullAppContext();
@@ -116,274 +361,58 @@ export async function generateAIResponse(
     console.warn('Could not load full app context:', err);
   }
 
-  // 1. OmniRouter (Local Network Proxy / Custom OmniRouter API Key)
-  if (provider === 'omnirouter') {
-    const omniUrl = (await getAPIKey('omniRouterUrl')) || process.env.LLM_PROXY_BASE_URL;
-    const omniKey = (await getAPIKey('omniRouterKey')) || process.env.LLM_PROXY_API_KEY;
-
-    if (!omniUrl || !omniKey) {
-      return `⚠️ No OmniRouter credentials entered.\n\nPlease open ⚙️ Settings -> OmniRouter Setup and enter your OmniRouter Base URL and API Key to connect.`;
+  // Define primary execution strategy based on selected provider
+  const tryProvider = async (targetProvider: AIProvider, targetModel: string): Promise<string | null> => {
+    if (targetProvider === 'google') {
+      const key = (await getAPIKey('google')) || process.env.GEMINI_API_KEY;
+      if (key) return await callGoogleWithFallback(key, targetModel, processedMessages);
     }
-
-    try {
-      const cleanUrl = omniUrl.replace(/\/+$/, '');
-      const endpoint = cleanUrl.endsWith('/v1')
-        ? `${cleanUrl}/chat/completions`
-        : `${cleanUrl}/v1/chat/completions`;
-
-      let omniModel = model || 'openai/omnirouter-auto';
-      if (!omniModel || omniModel.includes('-auto') || omniModel === 'auto') {
-        omniModel = 'openai/omnirouter-auto';
-      } else if (!omniModel.includes('/')) {
-        omniModel = `openai/${omniModel}`;
-      }
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${omniKey}`,
-        },
-        body: JSON.stringify({
-          model: omniModel,
-          messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
-
-      const { data, rawText, isJson } = await parseSafeResponse(response);
-
-      if (isJson && data) {
-        if (data.choices && data.choices[0]?.message?.content) {
-          return data.choices[0].message.content;
-        }
-        if (data.error?.message) {
-          return `OmniRouter Error: ${data.error.message}`;
-        }
-      }
-
-      if (!response.ok) {
-        return `⚠️ OmniRouter Error (${response.status}): ${rawText.slice(0, 150) || 'Server returned non-JSON response'}`;
-      }
-    } catch (err: any) {
-      console.warn('OmniRouter network call error:', err);
-      return `⚠️ Network Error: Unable to connect to OmniRouter at ${omniUrl}.\n\nPlease make sure your server is running and accessible.`;
+    if (targetProvider === 'openai') {
+      const key = (await getAPIKey('openai')) || process.env.OPENAI_API_KEY;
+      if (key) return await callOpenAIWithFallback(key, targetModel, processedMessages);
     }
-  }
-
-  // 2. Google Gemini
-  if (provider === 'google') {
-    const keyToUse = (await getAPIKey('google')) || process.env.GEMINI_API_KEY;
-    if (!keyToUse) {
-      return `⚠️ No Google Gemini API key entered.\n\nPlease open ⚙️ Settings and enter your Google Gemini API Key.`;
+    if (targetProvider === 'anthropic') {
+      const key = (await getAPIKey('anthropic')) || process.env.ANTHROPIC_API_KEY;
+      if (key) return await callAnthropicWithFallback(key, targetModel, processedMessages);
     }
-    try {
-      let targetModel = model || 'gemini-1.5-flash';
-      if (!targetModel || targetModel.includes('-auto') || targetModel === 'auto' || targetModel.includes('2.5')) {
-        targetModel = 'gemini-1.5-flash';
-      }
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${keyToUse}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: processedMessages.map((m) => ({
-              role: m.role === 'user' ? 'user' : m.role === 'system' ? 'user' : 'model',
-              parts: [{ text: m.content }],
-            })),
-          }),
-        }
-      );
-      const { data, rawText, isJson } = await parseSafeResponse(response);
-      if (isJson && data) {
-        if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-          return data.candidates[0].content.parts[0].text;
-        }
-        if (data.error?.message) return `Gemini Error: ${data.error.message}`;
-      }
-      return `⚠️ Gemini Response Error (${response.status}): ${rawText.slice(0, 150)}`;
-    } catch (err: any) {
-      console.warn('Gemini API call failed:', err);
-      return `⚠️ Gemini Connection Error: ${err?.message || 'Unable to connect to Google Gemini API.'}`;
+    if (targetProvider === 'groq') {
+      const key = (await getAPIKey('groq')) || process.env.GROQ_API_KEY;
+      if (key) return await callGroqWithFallback(key, targetModel, processedMessages);
+    }
+    if (targetProvider === 'openrouter') {
+      const key = await getAPIKey('openrouter');
+      if (key) return await callOpenRouterWithFallback(key, targetModel, processedMessages);
+    }
+    if (targetProvider === 'omnirouter') {
+      const url = (await getAPIKey('omniRouterUrl')) || process.env.LLM_PROXY_BASE_URL;
+      const key = (await getAPIKey('omniRouterKey')) || process.env.LLM_PROXY_API_KEY;
+      if (url && key) return await callOmniRouterWithFallback(url, key, targetModel, processedMessages);
+    }
+    return null;
+  };
+
+  // 1. First attempt: Primary Provider selected by user
+  const primaryResult = await tryProvider(provider, model);
+  if (primaryResult) return primaryResult;
+
+  // 2. Fallback Order: Try all other configured providers sequentially
+  const fallbackOrder: AIProvider[] = [
+    'google',
+    'omnirouter',
+    'openai',
+    'anthropic',
+    'groq',
+    'openrouter',
+    'ollama',
+  ];
+
+  for (const altProvider of fallbackOrder) {
+    if (altProvider === provider) continue;
+    const fallbackResult = await tryProvider(altProvider, `${altProvider}-auto`);
+    if (fallbackResult) {
+      return `[Auto-Fallback via ${altProvider.toUpperCase()}]\n\n${fallbackResult}`;
     }
   }
 
-  // 3. OpenAI
-  if (provider === 'openai') {
-    const keyToUse = (await getAPIKey('openai')) || process.env.OPENAI_API_KEY;
-    if (!keyToUse) {
-      return `⚠️ No OpenAI API key entered.\n\nPlease open ⚙️ Settings and enter your OpenAI API Key.`;
-    }
-    try {
-      let targetModel = model || 'gpt-4o';
-      if (!targetModel || targetModel.includes('-auto') || targetModel === 'auto') {
-        targetModel = 'gpt-4o';
-      }
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${keyToUse}`,
-        },
-        body: JSON.stringify({
-          model: targetModel,
-          messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
-      const { data, rawText, isJson } = await parseSafeResponse(response);
-      if (isJson && data) {
-        if (data.choices && data.choices[0]?.message?.content) {
-          return data.choices[0].message.content;
-        }
-        if (data.error?.message) return `OpenAI Error: ${data.error.message}`;
-      }
-      return `⚠️ OpenAI Response Error (${response.status}): ${rawText.slice(0, 150)}`;
-    } catch (err: any) {
-      console.warn('OpenAI call error:', err);
-      return `⚠️ OpenAI Error: ${err?.message || 'Unable to connect to OpenAI.'}`;
-    }
-  }
-
-  // 4. Anthropic Claude
-  if (provider === 'anthropic') {
-    const keyToUse = (await getAPIKey('anthropic')) || process.env.ANTHROPIC_API_KEY;
-    if (!keyToUse) {
-      return `⚠️ No Anthropic API key entered.\n\nPlease open ⚙️ Settings and enter your Anthropic API Key.`;
-    }
-    try {
-      let targetModel = model || 'claude-3-5-sonnet-20241022';
-      if (!targetModel || targetModel.includes('-auto') || targetModel === 'auto') {
-        targetModel = 'claude-3-5-sonnet-20241022';
-      }
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': keyToUse,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: targetModel,
-          max_tokens: 1024,
-          messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
-      const { data, rawText, isJson } = await parseSafeResponse(response);
-      if (isJson && data) {
-        if (data.content && data.content[0]?.text) {
-          return data.content[0].text;
-        }
-        if (data.error?.message) return `Anthropic Error: ${data.error.message}`;
-      }
-      return `⚠️ Anthropic Response Error (${response.status}): ${rawText.slice(0, 150)}`;
-    } catch (err: any) {
-      console.warn('Anthropic call error:', err);
-      return `⚠️ Anthropic Error: ${err?.message || 'Unable to connect to Anthropic.'}`;
-    }
-  }
-
-  // 5. Groq
-  if (provider === 'groq') {
-    const keyToUse = (await getAPIKey('groq')) || process.env.GROQ_API_KEY;
-    if (!keyToUse) {
-      return `⚠️ No Groq API key entered.\n\nPlease open ⚙️ Settings and enter your Groq API Key.`;
-    }
-    try {
-      let targetModel = model || 'llama3-70b-8192';
-      if (!targetModel || targetModel.includes('-auto') || targetModel === 'auto') {
-        targetModel = 'llama3-70b-8192';
-      }
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${keyToUse}`,
-        },
-        body: JSON.stringify({
-          model: targetModel,
-          messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
-      const { data, rawText, isJson } = await parseSafeResponse(response);
-      if (isJson && data) {
-        if (data.choices && data.choices[0]?.message?.content) {
-          return data.choices[0].message.content;
-        }
-        if (data.error?.message) return `Groq Error: ${data.error.message}`;
-      }
-      return `⚠️ Groq Response Error (${response.status}): ${rawText.slice(0, 150)}`;
-    } catch (err: any) {
-      console.warn('Groq call error:', err);
-      return `⚠️ Groq Error: ${err?.message || 'Unable to connect to Groq.'}`;
-    }
-  }
-
-  // 6. OpenRouter
-  if (provider === 'openrouter') {
-    const keyToUse = await getAPIKey('openrouter');
-    if (!keyToUse) {
-      return `⚠️ No OpenRouter API key entered.\n\nPlease open ⚙️ Settings and enter your OpenRouter API Key.`;
-    }
-    try {
-      let targetModel = model || 'auto';
-      if (!targetModel || targetModel.includes('-auto')) {
-        targetModel = 'auto';
-      }
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${keyToUse}`,
-        },
-        body: JSON.stringify({
-          model: targetModel,
-          messages: processedMessages.map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
-      const { data, rawText, isJson } = await parseSafeResponse(response);
-      if (isJson && data) {
-        if (data.choices && data.choices[0]?.message?.content) {
-          return data.choices[0].message.content;
-        }
-        if (data.error?.message) return `OpenRouter Error: ${data.error.message}`;
-      }
-      return `⚠️ OpenRouter Response Error (${response.status}): ${rawText.slice(0, 150)}`;
-    } catch (err: any) {
-      console.warn('OpenRouter call error:', err);
-      return `⚠️ OpenRouter Error: ${err?.message || 'Unable to connect to OpenRouter.'}`;
-    }
-  }
-
-  // 7. Local Ollama
-  if (provider === 'ollama') {
-    const host = (await getAPIKey('ollamaHost')) || process.env.OLLAMA_HOST || 'http://localhost:11434';
-    try {
-      let targetModel = model || 'llama3';
-      if (!targetModel || targetModel.includes('-auto') || targetModel === 'auto') {
-        targetModel = 'llama3';
-      }
-      const response = await fetch(`${host}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: targetModel,
-          prompt: messages[messages.length - 1]?.content || '',
-          stream: false,
-        }),
-      });
-      const { data, rawText, isJson } = await parseSafeResponse(response);
-      if (isJson && data) {
-        if (data.response) {
-          return data.response;
-        }
-        if (data.error) return `Ollama Error: ${data.error}`;
-      }
-      return `⚠️ Ollama Response Error (${response.status}): ${rawText.slice(0, 150)}`;
-    } catch (err: any) {
-      console.warn('Ollama call error:', err);
-      return `⚠️ Unable to connect to Local Ollama at ${host}.\n\nPlease ensure Ollama is running locally.`;
-    }
-  }
-
-  return `⚠️ No API key configured for ${provider.toUpperCase()}.\n\nPlease open ⚙️ Settings to configure your credentials.`;
+  return `⚠️ Unable to generate AI response.\n\nPlease check your API Key credentials or host connection in ⚙️ Settings.`;
 }
