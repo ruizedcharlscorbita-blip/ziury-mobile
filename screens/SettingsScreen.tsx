@@ -146,21 +146,24 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   const handleSave = async () => {
     setIsSaving(true);
-    let hasError = false;
 
-    // Validate active/modified keys before saving
     const entriesToSave: Array<[keyof APIKeys, string]> = [];
 
-    if (keys.omniRouterUrl) entriesToSave.push(['omniRouterUrl', keys.omniRouterUrl]);
-    if (keys.omniRouterKey) entriesToSave.push(['omniRouterKey', keys.omniRouterKey]);
-    if (keys.google) entriesToSave.push(['google', keys.google]);
-    if (keys.anthropic) entriesToSave.push(['anthropic', keys.anthropic]);
-    if (keys.openai) entriesToSave.push(['openai', keys.openai]);
-    if (keys.groq) entriesToSave.push(['groq', keys.groq]);
-    if (keys.openrouter) entriesToSave.push(['openrouter', keys.openrouter]);
-    if (keys.ollamaHost) entriesToSave.push(['ollamaHost', keys.ollamaHost]);
+    if (keys.omniRouterUrl !== undefined) entriesToSave.push(['omniRouterUrl', keys.omniRouterUrl]);
+    if (keys.omniRouterKey !== undefined) entriesToSave.push(['omniRouterKey', keys.omniRouterKey]);
+    if (keys.google !== undefined) entriesToSave.push(['google', keys.google]);
+    if (keys.anthropic !== undefined) entriesToSave.push(['anthropic', keys.anthropic]);
+    if (keys.openai !== undefined) entriesToSave.push(['openai', keys.openai]);
+    if (keys.groq !== undefined) entriesToSave.push(['groq', keys.groq]);
+    if (keys.openrouter !== undefined) entriesToSave.push(['openrouter', keys.openrouter]);
+    if (keys.ollamaHost !== undefined) entriesToSave.push(['ollamaHost', keys.ollamaHost]);
 
-    // Perform live validation on entered non-empty keys
+    // Save all entered keys first
+    for (const [providerKey, val] of entriesToSave) {
+      await saveAPIKey(providerKey, val);
+    }
+
+    // Perform live validation on non-empty entered keys
     for (const [providerKey, val] of entriesToSave) {
       if (val && val.trim().length > 0) {
         setTesting((t) => ({ ...t, [providerKey]: true }));
@@ -168,11 +171,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         setTestResults((r) => ({ ...r, [providerKey]: liveRes }));
         setTesting((t) => ({ ...t, [providerKey]: false }));
 
-        if (!liveRes.valid) {
-          alert(`❌ Key Validation Failed for ${providerKey.toUpperCase()}:\n\n${liveRes.message}\n\nPlease check your credentials.`);
-          hasError = true;
-          break;
-        } else if (liveRes.discoveredModels && liveRes.discoveredModels.length > 0) {
+        if (liveRes.valid && liveRes.discoveredModels && liveRes.discoveredModels.length > 0) {
           const discovered = liveRes.discoveredModels;
           await saveDiscoveredModels(providerKey, discovered);
           setDiscoveredModelsMap((m) => ({ ...m, [providerKey]: discovered }));
@@ -180,20 +179,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       }
     }
 
-    if (!hasError) {
-      // Save validated keys
-      for (const [providerKey, val] of entriesToSave) {
-        await saveAPIKey(providerKey, val);
-      }
-
-      if (onRefreshData) {
-        onRefreshData();
-      }
-
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+    if (onRefreshData) {
+      onRefreshData();
     }
 
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
     setIsSaving(false);
   };
 
@@ -358,11 +349,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </TouchableOpacity>
 
               {!isCollapsed &&
-                modelList.map((m) => {
+                modelList.map((m, idx) => {
                   const isSelected = m.id === selectedModel;
                   return (
                     <TouchableOpacity
-                      key={m.id}
+                      key={`${m.provider}_${m.id}_${idx}`}
                       style={[styles.subModelCard, isSelected && styles.modelCardSelected]}
                       onPress={() => onSelectModel(m.provider, m.id)}
                     >

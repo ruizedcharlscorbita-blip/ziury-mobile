@@ -81,6 +81,15 @@ export function validateKeyFormat(
   return rule(key.trim());
 }
 
+function deduplicateModels(models: AIModelOption[]): AIModelOption[] {
+  const seen = new Set<string>();
+  return models.filter((m) => {
+    if (!m.id || seen.has(m.id)) return false;
+    seen.add(m.id);
+    return true;
+  });
+}
+
 // ---------------------------------------------------------------------------
 // 2. LIVE VALIDATION & DYNAMIC MODEL DISCOVERY
 // ---------------------------------------------------------------------------
@@ -96,17 +105,19 @@ const LIVE_TESTERS: Record<string, LiveTester> = {
     if (res.ok) {
       try {
         const data = await res.json();
-        const models: AIModelOption[] = (data.models || [])
-          .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
-          .map((m: any) => {
-            const rawId = m.name.replace(/^models\//, '');
-            return {
-              id: rawId,
-              name: m.displayName || rawId,
-              provider: 'google' as AIProvider,
-              description: m.description ? m.description.slice(0, 80) : 'Google Gemini Model',
-            };
-          });
+        const models: AIModelOption[] = deduplicateModels(
+          (data.models || [])
+            .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
+            .map((m: any) => {
+              const rawId = m.name.replace(/^models\//, '');
+              return {
+                id: rawId,
+                name: m.displayName || rawId,
+                provider: 'google' as AIProvider,
+                description: m.description ? m.description.slice(0, 80) : 'Google Gemini Model',
+              };
+            })
+        );
         return ok(`Google key verified ✓ (${models.length} models discovered)`, models);
       } catch (e) {
         return ok('Google key is valid ✓');
@@ -127,12 +138,14 @@ const LIVE_TESTERS: Record<string, LiveTester> = {
     if (res.ok) {
       try {
         const data = await res.json();
-        const models: AIModelOption[] = (data.data || []).map((m: any) => ({
-          id: m.id,
-          name: m.display_name || m.id,
-          provider: 'anthropic' as AIProvider,
-          description: 'Anthropic Claude Model',
-        }));
+        const models: AIModelOption[] = deduplicateModels(
+          (data.data || []).map((m: any) => ({
+            id: m.id,
+            name: m.display_name || m.id,
+            provider: 'anthropic' as AIProvider,
+            description: 'Anthropic Claude Model',
+          }))
+        );
         return ok(`Anthropic key verified ✓ (${models.length} models discovered)`, models);
       } catch (e) {
         return ok('Anthropic key is valid ✓');
@@ -150,15 +163,17 @@ const LIVE_TESTERS: Record<string, LiveTester> = {
     if (res.ok) {
       try {
         const data = await res.json();
-        const models: AIModelOption[] = (data.data || [])
-          .filter((m: any) => m.id.startsWith('gpt-') || m.id.startsWith('o1') || m.id.startsWith('o3'))
-          .slice(0, 15)
-          .map((m: any) => ({
-            id: m.id,
-            name: m.id,
-            provider: 'openai' as AIProvider,
-            description: 'OpenAI Flagship Model',
-          }));
+        const models: AIModelOption[] = deduplicateModels(
+          (data.data || [])
+            .filter((m: any) => m.id.startsWith('gpt-') || m.id.startsWith('o1') || m.id.startsWith('o3'))
+            .slice(0, 15)
+            .map((m: any) => ({
+              id: m.id,
+              name: m.id,
+              provider: 'openai' as AIProvider,
+              description: 'OpenAI Flagship Model',
+            }))
+        );
         return ok(`OpenAI key verified ✓ (${models.length} models discovered)`, models);
       } catch (e) {
         return ok('OpenAI key is valid ✓');
@@ -176,12 +191,14 @@ const LIVE_TESTERS: Record<string, LiveTester> = {
     if (res.ok) {
       try {
         const data = await res.json();
-        const models: AIModelOption[] = (data.data || []).map((m: any) => ({
-          id: m.id,
-          name: m.id,
-          provider: 'groq' as AIProvider,
-          description: 'Groq Hardware Accelerated Model',
-        }));
+        const models: AIModelOption[] = deduplicateModels(
+          (data.data || []).map((m: any) => ({
+            id: m.id,
+            name: m.id,
+            provider: 'groq' as AIProvider,
+            description: 'Groq Hardware Accelerated Model',
+          }))
+        );
         return ok(`Groq key verified ✓ (${models.length} models discovered)`, models);
       } catch (e) {
         return ok('Groq key is valid ✓');
@@ -199,12 +216,14 @@ const LIVE_TESTERS: Record<string, LiveTester> = {
     if (res.ok) {
       try {
         const data = await res.json();
-        const models: AIModelOption[] = (data.data || []).slice(0, 12).map((m: any) => ({
-          id: m.id,
-          name: m.name || m.id,
-          provider: 'openrouter' as AIProvider,
-          description: m.description ? m.description.slice(0, 80) : 'OpenRouter Model',
-        }));
+        const models: AIModelOption[] = deduplicateModels(
+          (data.data || []).slice(0, 12).map((m: any) => ({
+            id: m.id,
+            name: m.name || m.id,
+            provider: 'openrouter' as AIProvider,
+            description: m.description ? m.description.slice(0, 80) : 'OpenRouter Model',
+          }))
+        );
         return ok(`OpenRouter key verified ✓ (${models.length} models discovered)`, models);
       } catch (e) {
         return ok('OpenRouter key is valid ✓');
@@ -221,12 +240,14 @@ const LIVE_TESTERS: Record<string, LiveTester> = {
     if (res.ok) {
       try {
         const data = await res.json();
-        const models: AIModelOption[] = (data.models || []).map((m: any) => ({
-          id: m.name,
-          name: m.name,
-          provider: 'ollama' as AIProvider,
-          description: `Local Ollama Model (${m.details?.parameter_size || 'Local'})`,
-        }));
+        const models: AIModelOption[] = deduplicateModels(
+          (data.models || []).map((m: any) => ({
+            id: m.name,
+            name: m.name,
+            provider: 'ollama' as AIProvider,
+            description: `Local Ollama Model (${m.details?.parameter_size || 'Local'})`,
+          }))
+        );
         return ok(`Ollama reachable ✓ (${models.length} local models found)`, models);
       } catch (e) {
         return ok('Ollama host is reachable ✓');
@@ -242,12 +263,14 @@ const LIVE_TESTERS: Record<string, LiveTester> = {
     if (res.ok || res.status === 401) {
       try {
         const data = await res.json();
-        const models: AIModelOption[] = (data.data || data.models || []).map((m: any) => ({
-          id: m.id || m.name,
-          name: m.id || m.name,
-          provider: 'omnirouter' as AIProvider,
-          description: 'OmniRouter Network Endpoint',
-        }));
+        const models: AIModelOption[] = deduplicateModels(
+          (data.data || data.models || []).map((m: any) => ({
+            id: m.id || m.name,
+            name: m.id || m.name,
+            provider: 'omnirouter' as AIProvider,
+            description: 'OmniRouter Network Endpoint',
+          }))
+        );
         return ok(`OmniRouter reachable ✓ (${models.length} endpoints found)`, models);
       } catch (e) {
         return ok('OmniRouter URL is reachable ✓');
