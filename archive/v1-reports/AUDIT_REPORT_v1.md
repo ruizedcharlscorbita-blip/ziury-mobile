@@ -1,8 +1,8 @@
 # AUDIT_REPORT_v1.md — Token Efficiency Audit: ZIUR-AI-STACK V1
 
-**Audit Target:** `ZIUR-AI-STACK V1` Root & Infrastructure Subfolders  
-**Audit Date:** July 26, 2026  
-**Scope:** `.mcp`, `agents`, `docs`, `hooks`, `knowledge-base`, `prompts`, `scripts`, `templates`, `versions`, `workflows`, and root configuration files.  
+**Audit Target:** `ZIUR-AI-STACK V1` Root & Infrastructure Subfolders
+**Audit Date:** July 26, 2026
+**Scope:** `.mcp`, `agents`, `docs`, `hooks`, `knowledge-base`, `prompts`, `scripts`, `templates`, `versions`, `workflows`, and root configuration files.
 **Mode:** Audit-only findings (no recommendations or file modifications included).
 
 ---
